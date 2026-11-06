@@ -11,14 +11,24 @@ class User extends Authenticatable {
 
     protected $fillable = [
         'username',
+        'email',
         'password',
         'fullname',
         'phone_number',
         'role_id',
+        'otp_code',
+        'otp_expires_at',
+        'phone_verified_at',
     ];
 
     protected $hidden = [
         'password',
+        'otp_code',
+    ];
+
+    protected $casts = [
+        'otp_expires_at' => 'datetime',
+        'phone_verified_at' => 'datetime',
     ];
 
     // Relasi ke tabel Role

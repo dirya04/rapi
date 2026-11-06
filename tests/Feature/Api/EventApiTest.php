@@ -63,7 +63,7 @@ class EventApiTest extends TestCase
             'event_name' => 'Bertabrakan',
             'start_time' => '10:30',
             'end_time' => '11:30',
-        ], $headers)->assertUnprocessable()->assertJsonValidationErrors('room_id');
+        ], $headers)->assertUnprocessable()->assertJsonValidationErrors('time');
 
         $this->postJson('/api/events', [
             ...$payload,

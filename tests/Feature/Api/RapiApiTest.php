@@ -41,7 +41,7 @@ class RapiApiTest extends TestCase
             $conflictingStart = date('H:i', strtotime($startTime.' +30 minutes'));
             $conflictingEnd = date('H:i', strtotime($endTime.' +30 minutes'));
             $this->postJson('/api/events', $this->booking($room, $date, $conflictingStart, $conflictingEnd), $headers)
-                ->assertUnprocessable()->assertJsonValidationErrors('room_id');
+                ->assertUnprocessable()->assertJsonValidationErrors('time');
         }
     }
 
@@ -62,7 +62,7 @@ class RapiApiTest extends TestCase
             ...$this->booking($classroom, $monday, '11:00', '12:00'),
         ])->assertRedirect('/admin/dashboard')->assertSessionHasErrors('date');
         $this->actingAs($guru)->post('/events', $this->booking($classroom, $sunday, '11:00', '12:00'))
-            ->assertRedirect('/admin/dashboard')->assertSessionHas('success');
+            ->assertRedirect('/guru/dashboard')->assertSessionHas('success');
     }
 
     public function test_tv_display_returns_only_todays_active_and_upcoming_agendas(): void
@@ -147,7 +147,7 @@ class RapiApiTest extends TestCase
         $this->postJson('/api/complaints', [
             'room_id' => $room->id,
             'description' => 'Foto terlalu besar',
-            'photo' => UploadedFile::fake()->image('terlalu-besar.jpg')->size(8193),
+            'photo' => UploadedFile::fake()->image('terlalu-besar.jpg')->size(10241),
         ], $this->headersFor($guru))->assertUnprocessable()->assertJsonValidationErrors('photo');
     }
 

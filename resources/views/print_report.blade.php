@@ -1,3 +1,33 @@
+@php
+    $formatSessionTime = function($start, $end) {
+        $sessions = [
+            1  => ['07:15', '08:00'],
+            2  => ['08:00', '08:45'],
+            3  => ['08:45', '09:30'],
+            4  => ['09:30', '10:15'],
+            5  => ['10:15', '11:00'],
+            6  => ['11:00', '11:45'],
+            7  => ['11:45', '12:30'],
+            8  => ['12:30', '13:15'],
+            9  => ['13:15', '14:00'],
+            10 => ['14:00', '14:45'],
+            11 => ['14:45', '15:30'],
+        ];
+        $s = substr((string)$start, 0, 5);
+        $e = substr((string)$end, 0, 5);
+        $startNum = null;
+        $endNum = null;
+        foreach ($sessions as $num => [$st, $en]) {
+            if ($st === $s) $startNum = $num;
+            if ($en === $e) $endNum = $num;
+        }
+        if ($startNum && $endNum) {
+            $sessStr = $startNum === $endNum ? "Sesi {$startNum}" : "Sesi {$startNum} - {$endNum}";
+            return "{$sessStr} ({$s} - {$e})";
+        }
+        return "{$s} - {$e}";
+    };
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -131,7 +161,7 @@
                                 <td>{{ $event->event_name }}</td>
                                 <td>{{ $event->room_name }}</td>
                                 <td class="nowrap">{{ \Carbon\Carbon::parse($event->date)->locale('id')->translatedFormat('d M Y') }}</td>
-                                <td class="nowrap">{{ $event->start_time }} - {{ $event->end_time }}</td>
+                                <td class="nowrap">{{ $formatSessionTime($event->start_time, $event->end_time) }}</td>
                                 <td>{{ $event->move_reason ?: '-' }}</td>
                             </tr>
                         @empty

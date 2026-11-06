@@ -1,0 +1,31 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Nonaktifkan directory browsing untuk mencegah listing file/folder
+    Options -Indexes
+
+    # 2. Proteksi Keamanan: Blokir akses langsung ke file tersembunyi (.env, .git, .github, dll.)
+    RewriteRule ^\.(.*)$ - [F,L]
+
+    # 3. Proteksi Keamanan: Blokir akses langsung ke direktori sistem sensitif
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage/logs|tests|vendor)(/.*)?$ - [F,L]
+
+    # 4. Proteksi Keamanan: Blokir akses langsung ke file konfigurasi & dependensi
+    RewriteRule ^(composer\.(json|lock)|package(-lock)?\.json|artisan|phpunit\.xml|vite\.config\.js|README\.md)$ - [F,L]
+
+    # 5. Redirect seluruh traffic publik langsung ke folder /public/
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Proteksi cadangan jika mod_rewrite tidak aktif di shared hosting
+<FilesMatch "^\.(env|git|github)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "^(composer\.(json|lock)|package(-lock)?\.json|artisan|phpunit\.xml)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+

@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder {
     public function run(): void {
         // 1. Buat Roles
         $adminRole = Role::firstOrCreate(['role_name' => 'Admin']);
+        $wakaRole = Role::firstOrCreate(['role_name' => 'Waka']);
         $picRole = Role::firstOrCreate(['role_name' => 'PIC']);
         $guruRole = Role::firstOrCreate(['role_name' => 'Guru']);
         $organisasiRole = Role::firstOrCreate(['role_name' => 'Organisasi']);
@@ -23,11 +24,39 @@ class DatabaseSeeder extends Seeder {
             'role_id'      => $adminRole->id,
         ]);
 
+        User::updateOrCreate(['username' => 'waka'], [
+            'fullname'     => 'Waka Sekolah',
+            'phone_number' => '081234567892',
+            'password'     => Hash::make(env('RAPI_WAKA_PASSWORD', 'waka12345')),
+            'role_id'      => $wakaRole->id,
+        ]);
+
         // 3. Akun Petugas PIC Ruang
         User::updateOrCreate(['username' => 'pic_lab'], [
             'fullname'     => 'Petugas PIC Lab',
             'phone_number' => '089876543210',
             'password'     => Hash::make('pic123'),
+            'role_id'      => $picRole->id,
+        ]);
+
+        User::updateOrCreate(['username' => 'sarpras'], [
+            'fullname'     => 'PIC Sarpras Sekolah',
+            'phone_number' => '081234567899',
+            'password'     => Hash::make('sarpras123'),
+            'role_id'      => $picRole->id,
+        ]);
+
+        User::updateOrCreate(['username' => 'arif'], [
+            'fullname'     => 'Mas Arif',
+            'phone_number' => '081234567801',
+            'password'     => Hash::make('arif123'),
+            'role_id'      => $picRole->id,
+        ]);
+
+        User::updateOrCreate(['username' => 'haris'], [
+            'fullname'     => 'Pak Haris',
+            'phone_number' => '081234567802',
+            'password'     => Hash::make('haris123'),
             'role_id'      => $picRole->id,
         ]);
 
@@ -46,5 +75,7 @@ class DatabaseSeeder extends Seeder {
             'password'     => Hash::make('osis12345'),
             'role_id'      => $organisasiRole->id,
         ]);
+
+        $this->call(RoomSeeder::class);
     }
 }

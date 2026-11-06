@@ -48,6 +48,18 @@ class MasterDataApiTest extends TestCase
             ->assertOk()->assertJsonPath('message', 'Akun dihapus.');
     }
 
+    public function test_admin_can_assign_waka_role_to_a_user(): void
+    {
+        $admin = $this->makeUser('Admin');
+        $user = $this->makeUser('Guru');
+        $wakaRole = Role::firstOrCreate(['role_name' => 'Waka']);
+
+        $this->putJson('/api/admin/users/'.$user->id, [
+            'role_id' => $wakaRole->id,
+        ], $this->headersFor($admin))->assertOk()
+            ->assertJsonPath('data.role', 'Waka');
+    }
+
     public function test_room_crud_validates_pic_and_public_endpoint_hides_inactive_rooms(): void
     {
         $admin = $this->makeUser('Admin');
@@ -63,13 +75,22 @@ class MasterDataApiTest extends TestCase
 
         $this->postJson('/api/admin/rooms', [
             'room_name' => 'Ruang Tidak Valid',
+            'room_type' => 'lainnya',
             'capacity' => 30,
             'location' => 'Gedung A',
             'pic_id' => $guru->id,
         ], $this->headersFor($admin))->assertUnprocessable()->assertJsonValidationErrors('pic_id');
 
+        $this->postJson('/api/admin/rooms', [
+            'room_name' => 'Ruang Tanpa Tipe',
+            'capacity' => 30,
+            'location' => 'Gedung A',
+            'pic_id' => $pic->id,
+        ], $this->headersFor($admin))->assertUnprocessable()->assertJsonValidationErrors('room_type');
+
         $created = $this->postJson('/api/admin/rooms', [
             'room_name' => 'Ruang Baru',
+            'room_type' => 'lainnya',
             'capacity' => 30,
             'location' => 'Gedung A',
             'pic_id' => $pic->id,
@@ -78,6 +99,7 @@ class MasterDataApiTest extends TestCase
 
         $this->putJson('/api/admin/rooms/'.$roomId, [
             'room_name' => 'Ruang Baru Diperbarui',
+            'room_type' => 'lainnya',
             'capacity' => 35,
             'location' => 'Gedung B',
             'pic_id' => $pic->id,

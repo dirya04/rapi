@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Deployment Secret Token
+    |--------------------------------------------------------------------------
+    |
+    | Secret key used to authorize database migration and post-deploy
+    | maintenance webhook triggers from GitHub Actions or CI/CD pipelines.
+    |
+    */
+
+    'deploy_secret' => env('DEPLOY_SECRET', 'rapi_secret_token_12345'),
+
 ];

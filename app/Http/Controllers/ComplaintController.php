@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Complaint;
 use App\Models\Room;
 use App\Services\ComplaintStatusService;
+use App\Services\ComplaintWhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 use Throwable;
 
 class ComplaintController extends Controller
@@ -19,7 +21,13 @@ class ComplaintController extends Controller
         $data = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'description' => ['required', 'string', 'max:2000'],
-            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'photo' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],
+        ], [
+            'photo.required' => 'Pilih foto bukti kerusakan terlebih dahulu.',
+            'photo.uploaded' => 'Foto tidak dapat diunggah. Pastikan ukuran file maksimal 10 MB dan pengaturan upload server mengizinkan ukuran tersebut.',
+            'photo.max' => 'Ukuran foto maksimal 10 MB.',
+            'photo.image' => 'File bukti harus berupa gambar.',
+            'photo.mimes' => 'Format foto harus JPG, JPEG, atau PNG.',
         ]);
 
         $room = Room::findOrFail($data['room_id']);
@@ -27,8 +35,13 @@ class ComplaintController extends Controller
             throw ValidationException::withMessages(['room_id' => ['Ruangan tidak aktif.']]);
         }
 
-        $photoPath = $request->file('photo')->store('complaints', 'public');
-        abort_unless($photoPath, 500, 'Foto pengaduan gagal disimpan.');
+        $photo = $request->file('photo');
+        $photoPath = $photo->storeAs(
+            'complaints',
+            Str::uuid().'.'.$photo->guessExtension(),
+            'public'
+        );
+        abort_unless($photoPath, 500, 'Foto pengaduan gagal disimpan ke penyimpanan publik.');
 
         try {
             DB::table('complaints')->insert([
@@ -46,7 +59,8 @@ class ComplaintController extends Controller
             throw $exception;
         }
 
-        return redirect('/admin/dashboard')->with('success', 'Laporan kerusakan berhasil dikirim.');
+        return redirect($this->dashboardPath($request))
+            ->with('success', 'Laporan kerusakan berhasil dikirim.');
     }
 
     // Ubah status perbaikan
@@ -54,11 +68,20 @@ class ComplaintController extends Controller
     {
         $data = $request->validate([
             'status_repair' => 'required|in:Belum Diperbaiki,Menunggu Spare Part,Sudah Diperbaiki',
+            'progress_note' => 'nullable|string|max:2000',
         ]);
 
         $complaint = Complaint::findOrFail($id);
-        $statuses->update($complaint, $request->user(), $data['status_repair']);
+        $statuses->update($complaint, $request->user(), $data['status_repair'], $data['progress_note'] ?? null);
 
-        return redirect('/admin/dashboard')->with('success', 'Status perbaikan diperbarui.');
+        return redirect($this->dashboardPath($request))
+            ->with('success', 'Status perbaikan diperbarui.');
+    }
+
+    public function whatsapp(Complaint $complaint, ComplaintWhatsAppService $whatsapp)
+    {
+        [$url] = $whatsapp->generate($complaint);
+
+        return redirect()->away($url);
     }
 }

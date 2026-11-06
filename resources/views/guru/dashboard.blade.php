@@ -1,17 +1,1019 @@
+@php
+    $formatSessionTime = function($start, $end) {
+        $sessions = [
+            1  => ['07:15', '08:00'],
+            2  => ['08:00', '08:45'],
+            3  => ['08:45', '09:30'],
+            4  => ['09:30', '10:15'],
+            5  => ['10:15', '11:00'],
+            6  => ['11:00', '11:45'],
+            7  => ['11:45', '12:30'],
+            8  => ['12:30', '13:15'],
+            9  => ['13:15', '14:00'],
+            10 => ['14:00', '14:45'],
+            11 => ['14:45', '15:30'],
+        ];
+        $s = substr((string)$start, 0, 5);
+        $e = substr((string)$end, 0, 5);
+        $startNum = null;
+        $endNum = null;
+        foreach ($sessions as $num => [$st, $en]) {
+            if ($st === $s) $startNum = $num;
+            if ($en === $e) $endNum = $num;
+        }
+        if ($startNum && $endNum) {
+            $sessStr = $startNum === $endNum ? "Sesi {$startNum}" : "Sesi {$startNum} - {$endNum}";
+            return "{$sessStr} ({$s} - {$e})";
+        }
+        return "{$s} - {$e}";
+    };
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Guru / Organisasi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAPI-Sekolah | Dashboard Guru & Organisasi</title>
+    @vite(['resources/css/app.css'])
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --board: #123c33;        /* hijau papan tulis */
+            --board-2: #1b5246;
+            --chalk: #eaf3ee;
+            --chalk-muted: #9dbbb0;
+            --paper: #f3f6f4;        /* latar kerja */
+            --card: #ffffff;
+            --ink: #14231e;
+            --ink-muted: #5d6f68;
+            --line: #dce5e0;
+            --yellow: #f6b800;       /* kuning bus sekolah */
+            --yellow-dark: #c99500;
+            --red-soft: #fbeae7;
+            --green-soft: #e3f3ea;
+            --blue-soft: #e8f2fe;
+            --focus: #1d7a63;
+            --display: 'Bricolage Grotesque', system-ui, sans-serif;
+            --body: 'Public Sans', system-ui, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--body);
+            background: var(--paper);
+            color: var(--ink);
+            line-height: 1.55;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 270px 1fr;
+        }
+        :focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+        /* ---------- Sidebar ---------- */
+        .sidebar {
+            background: var(--board);
+            color: var(--chalk);
+            padding: 32px 24px;
+            position: sticky; top: 0; height: 100vh; height: 100dvh;
+            display: flex; flex-direction: column; gap: 20px;
+            min-height: 0; overflow: hidden;
+            background-image: radial-gradient(circle at 100% 0, rgba(255,255,255,.06), transparent 45%);
+        }
+        .brand { font-family: var(--display); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+        .brand small { display: block; font-family: var(--body); font-weight: 400; font-size: .8rem; color: var(--chalk-muted); letter-spacing: 0; margin-top: 6px; }
+        .brand i { font-style: normal; color: var(--yellow); }
+
+        .nav { display: flex; flex-direction: column; gap: 6px; }
+        .nav a {
+            color: var(--chalk); text-decoration: none; padding: 11px 14px; border-radius: 10px;
+            font-size: .92rem; font-weight: 500; display: flex; align-items: center; gap: 10px;
+            transition: background .2s;
+        }
+        .nav a:hover { background: rgba(255,255,255,.1); }
+        .sidebar-main-nav { flex: 1; min-height: 0; overflow-y: auto; }
+        .sidebar-actions { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,.16); flex-shrink: 0; }
+        .nav-bottom { margin-top: 0; }
+        .nav-bottom .logout { color: #ffb4a8; }
+        .nav-bottom .logout:hover { background: rgba(201,64,47,.25); }
+
+        /* ---------- Main ---------- */
+        main { padding: 40px 48px 64px; max-width: 1180px; width: 100%; }
+
+        .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+        .top h1 { font-family: var(--display); font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+        .top p { color: var(--ink-muted); margin-top: 6px; max-width: 52ch; }
+        .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
+        .profile-button { display: inline-flex; align-items: center; gap: 10px; padding: 7px 12px 7px 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); text-decoration: none; box-shadow: 0 2px 8px rgba(20,35,30,.06); }
+        .profile-button:hover { border-color: var(--focus); background: #f8fbf9; }
+        .profile-avatar { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--board); color: var(--chalk); font-family: var(--display); font-size: 1.05rem; font-weight: 800; }
+        .profile-identity strong, .profile-identity small { display: block; }
+        .profile-identity strong { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .84rem; }
+        .profile-identity small { color: var(--ink-muted); font-size: .72rem; }
+
+        .stats { display: flex; gap: 12px; }
+        .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 20px; min-width: 120px; }
+        .stat b { font-family: var(--display); font-size: 1.8rem; font-weight: 800; line-height: 1; display: block; }
+        .stat span { font-size: .8rem; color: var(--ink-muted); }
+
+        /* Tata letak 1 kolom ke bawah terpisah rapi */
+        .layout { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 28px; 
+        }
+
+        .panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; scroll-margin-top: 20px; }
+        .panel-head { padding: 22px 26px 0; }
+        .panel-head h2 { font-family: var(--display); font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+        .panel-head p { font-size: .85rem; color: var(--ink-muted); margin-top: 2px; }
+        .panel-body { padding: 22px 26px 26px; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; margin: 18px 26px 0; padding: 4px; background: var(--paper); border-radius: 12px; }
+        .tab { flex: 1; border: 0; background: transparent; padding: 10px 12px; border-radius: 9px; font: 600 .86rem var(--body); color: var(--ink-muted); cursor: pointer; transition: background .2s, color .2s; }
+        .tab[aria-selected="true"] { background: var(--board); color: var(--chalk); }
+        .tab-panel[hidden] { display: none; }
+
+        /* Forms */
+        .field { margin-bottom: 16px; }
+        label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 6px; }
+        input, select, textarea {
+            width: 100%; padding: 11px 13px; font: 400 .92rem var(--body); color: var(--ink);
+            background: #fbfcfb; border: 1.5px solid var(--line); border-radius: 10px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px rgba(29,122,99,.18); background: #fff; }
+        textarea { resize: vertical; }
+        input::placeholder, textarea::placeholder { color: #93a39c; }
+        input[type="file"] { padding: 9px 12px; cursor: pointer; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .btn {
+            width: 100%; border: 0; cursor: pointer; padding: 13px 18px; border-radius: 11px;
+            font: 700 .95rem var(--body); background: var(--yellow); color: #231a00;
+            transition: background .2s, transform .15s;
+        }
+        .btn:hover { background: var(--yellow-dark); }
+        .btn:active { transform: translateY(1px); }
+        .btn-dark { background: var(--board); color: var(--chalk); }
+        .btn-dark:hover { background: var(--board-2); }
+
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-process { background: var(--blue-soft); color: #1a568c; }
+        .badge-success { background: var(--green-soft); color: #13693e; }
+
+        /* Agenda & Item List */
+        .agenda { list-style: none; display: flex; flex-direction: column; }
+        .event { display: grid; grid-template-columns: 62px 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); }
+        .event:first-child { border-top: 0; padding-top: 0; }
+        .event:not(:has(.date)) { display: block; }
+
+        /* Agenda Hari Ini Grid (Rapi, Modern & Kompak) */
+        .agenda-today-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 16px;
+            max-height: 480px;
+            overflow-y: auto;
+            padding: 4px 2px;
+        }
+        .agenda-card {
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 2px 6px rgba(18, 60, 51, 0.04);
+            transition: transform .18s, box-shadow .18s, border-color .18s;
+        }
+        .agenda-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(18, 60, 51, 0.3);
+            box-shadow: 0 6px 16px rgba(18, 60, 51, 0.08);
+        }
+        .agenda-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .room-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--board);
+            background: var(--green-soft);
+            padding: 4px 10px;
+            border-radius: 8px;
+            max-width: 72%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .agenda-card h3 {
+            font-family: var(--display);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.3;
+            margin: 0;
+        }
+        .agenda-card .meta {
+            font-size: 0.82rem;
+            color: var(--ink-muted);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 14px;
+            margin-top: 0;
+        }
+
+        /* Filter Tabs Agenda */
+        .agenda-filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .agenda-filter-btn {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--ink-muted);
+            cursor: pointer;
+            transition: all .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .agenda-filter-btn:hover {
+            background: #e2e8e5;
+            color: var(--ink);
+        }
+        .agenda-filter-btn.active {
+            background: var(--board);
+            color: #fff;
+            border-color: var(--board);
+        }
+        .agenda-filter-btn .counter-pill {
+            background: rgba(0,0,0,0.06);
+            color: inherit;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.74rem;
+        }
+        .agenda-filter-btn.active .counter-pill {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+        .date { background: var(--board); color: var(--chalk); border-radius: 12px; text-align: center; padding: 8px 0 9px; height: fit-content; border-top: 5px solid var(--yellow); }
+        .date b { display: block; font-family: var(--display); font-size: 1.55rem; font-weight: 800; line-height: 1.1; }
+        .date span { font-size: .72rem; color: var(--chalk-muted); }
+        .event h3 { font-family: var(--display); font-size: 1.05rem; font-weight: 700; line-height: 1.3; }
+        .meta { font-size: .85rem; color: var(--ink-muted); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+        .agenda-status { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 9px; font-size: .72rem; font-weight: 700; }
+        .agenda-status.pending { background: #fff3cd; color: #856404; }
+        .agenda-status.approved { background: var(--green-soft); color: #13693e; }
+        .agenda-status.moved { background: var(--blue-soft); color: #1a568c; }
+        .approval-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .note { margin-top: 10px; padding: 9px 12px; background: var(--red-soft); color: #8e2a1c; border-radius: 9px; font-size: .83rem; }
+
+        .complaint-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+        .complaint-item { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fafcfb; }
+        .complaint-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 12px; margin-bottom: 8px; }
+        .complaint-head h4 { min-width: 0; overflow-wrap: anywhere; font-family: var(--display); font-size: .98rem; font-weight: 700; }
+        .complaint-desc { min-width: 0; font-size: .86rem; color: var(--ink-muted); margin-bottom: 8px; overflow-wrap: anywhere; }
+        .complaint-time { font-size: .78rem; color: #889990; }
+
+        .empty { text-align: center; padding: 36px 16px; color: var(--ink-muted); }
+        .empty b { display: block; font-family: var(--display); font-size: 1.1rem; color: var(--ink); margin-bottom: 4px; }
+
+        /* Toast Notifications */
+        .toasts { position: fixed; top: 20px; right: 20px; z-index: 50; display: flex; flex-direction: column; gap: 10px; max-width: min(380px, calc(100vw - 40px)); }
+        .toast { padding: 14px 16px; border-radius: 12px; font-size: .9rem; font-weight: 500; box-shadow: 0 12px 30px rgba(0,0,0,.18); display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; animation: toast-in .35s ease; }
+        .toast.ok { background: #0f5a3f; color: #e8fff4; }
+        .toast.err { background: #8e2a1c; color: #fff0ed; }
+        .toast button { background: none; border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; line-height: 1; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 1000px) {
+            body { grid-template-columns: 1fr; }
+            .sidebar { position: sticky; top: 0; z-index: 50; height: auto; min-height: 0; overflow: visible; flex-direction: column; align-items: stretch; padding: 14px 18px; gap: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+            .sidebar-main-nav { display: flex !important; flex-direction: row; overflow-x: auto; white-space: nowrap; gap: 6px; padding: 4px 0 6px; scrollbar-width: none; -ms-overflow-style: none; }
+            .sidebar-main-nav::-webkit-scrollbar { display: none; }
+            .sidebar-main-nav a { padding: 8px 12px; font-size: 0.82rem; background: rgba(255,255,255,0.08); border-radius: 8px; flex-shrink: 0; }
+            .sidebar-main-nav a:hover { background: rgba(255,255,255,0.18); }
+            .sidebar-actions { display: none; }
+            main { padding: 24px 18px 48px; }
+        }
+        @media (max-width: 1000px) { .top-actions { flex-wrap: wrap; } }
+        @media (max-width: 520px) { .row { grid-template-columns: 1fr; } .stats { width: 100%; } .stat { flex: 1; } .top-actions { width: 100%; justify-content: space-between; } .profile-identity { display: none; } }
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
+        /* Multi-Page Dashboard Views */
+        .admin-page-view {
+            display: none;
+        }
+        .admin-page-view.active {
+            display: block;
+            animation: fadeInAdminPage 0.18s ease-out;
+        }
+        @keyframes fadeInAdminPage {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .sidebar .nav a.active {
+            background: rgba(255, 255, 255, 0.16) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+
+        /* Calendar Styles inside Dashboard */
+        .cal-card { background: white; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+        .cal-month-stepper { display: inline-flex; align-items: center; gap: 8px; background: #f4f8f6; padding: 4px 8px; border-radius: 10px; border: 1px solid var(--line); }
+        .cal-month-stepper button { width: 32px; height: 32px; display: grid; place-items: center; border: 0; background: #fff; border: 1px solid var(--line); border-radius: 7px; font-size: 1.15rem; font-weight: 800; cursor: pointer; color: var(--board); transition: background 0.15s; }
+        .cal-month-stepper button:hover { background: #edf5f0; }
+        .cal-month-header { font-family: var(--display); font-size: 1.15rem; font-weight: 800; color: var(--board); min-width: 160px; text-align: center; }
+        .cal-btn-today { border: 1px solid var(--line); border-radius: 9px; background: white; padding: 6px 14px; font-family: var(--body); font-weight: 600; font-size: 0.85rem; color: var(--board); cursor: pointer; transition: all 0.2s; }
+        .cal-btn-today:hover { background: var(--board); color: #fff; }
+        .cal-weekdays, .cal-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+        .cal-weekday { padding: 10px 6px; text-align: center; font-size: .8rem; font-weight: 700; background: #eef5f1; color: var(--board); text-transform: uppercase; letter-spacing: 0.05em; }
+        .cal-day { min-height: 115px; padding: 8px; border-top: 1px solid #e4ebe7; border-right: 1px solid #e4ebe7; background: #fff; position: relative; transition: background 0.15s; }
+        .cal-day:nth-child(7n) { border-right: 0; }
+        .cal-day:hover { background: #fafcfa; }
+        .cal-day-number { font-family: var(--display); font-size: .92rem; font-weight: 800; color: #374741; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 6px; }
+        .cal-day.outside { background: #fbfdfc; }
+        .cal-day.outside .cal-day-number { color: #adbdb5; font-weight: 500; }
+        .cal-day.today { background: #f0f8f3; }
+        .cal-day.today .cal-day-number { background: var(--board); color: #fff; }
+        .cal-event-item { display: block; margin-top: 5px; padding: 4px 6px; border-radius: 6px; background: #e6f4ec; color: #114e35; font-size: .72rem; line-height: 1.3; border-left: 3px solid #1f8a5f; overflow-wrap: anywhere; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .cal-event-item strong { display: block; font-weight: 700; font-size: .72rem; }
+        .cal-time { display: block; font-weight: 600; color: #0d3e2a; font-size: .68rem; margin-bottom: 1px; }
+        .cal-message { padding: 12px 18px; color: var(--ink-muted); font-size: 0.85rem; border-top: 1px solid var(--line); }
+    </style>
 </head>
-<body class="p-4 bg-light">
-    <div class="container">
-        <h2>Selamat Datang, Guru / Organisasi!</h2>
-        <form action="{{ route('logout') }}" method="POST" class="mt-3">
-            @csrf
-            <button type="submit" class="btn btn-danger">Logout</button>
-        </form>
+<body>
+
+    <x-sidebar dashboard-role="guru" />
+
+    {{-- ===== Notifikasi ===== --}}
+    <div class="toasts" aria-live="polite">
+        @if(session('error'))
+            <div class="toast err"><span>⚠️ {{ session('error') }}</span><button type="button" aria-label="Tutup" onclick="this.parentElement.remove()">×</button></div>
+        @endif
+        @if(session('success'))
+            <div class="toast ok"><span>✅ {{ session('success') }}</span><button type="button" aria-label="Tutup" onclick="this.parentElement.remove()">×</button></div>
+        @endif
+        @if($errors->any())
+            <div class="toast err"><span>⚠️ {{ $errors->first() }}</span><button type="button" aria-label="Tutup" onclick="this.parentElement.remove()">×</button></div>
+        @endif
     </div>
+
+    {{-- ===== Konten Utama ===== --}}
+    <main>
+        <header class="top">
+            <div>
+                <h1>Halo, {{ session('fullname') ?? 'Guru / Organisasi' }}</h1>
+                <p>Pinjam ruangan untuk kegiatan KBM atau organisasi, dan laporkan kerusakan fasilitas di lingkungan sekolah.</p>
+            </div>
+            <div class="top-actions">
+                <div class="stats">
+                    <div class="stat"><b>{{ $roomCount }}</b><span>Ruangan</span></div>
+                    <div class="stat"><b>{{ count($events ?? []) }}</b><span>Agenda</span></div>
+                    <div class="stat"><b>{{ count($complaints ?? []) }}</b><span>Pengaduan</span></div>
+                </div>
+                <x-profile-button />
+            </div>
+        </header>
+
+        <div class="layout">
+            {{-- PAGE 1: DAFTAR AGENDA --}}
+            <div class="admin-page-view active" id="page-agenda" data-page="agenda">
+                <section class="panel" id="agenda-hari-ini">
+                <div class="panel-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h2>Daftar Agenda Hari Ini</h2>
+                        <p>Pengajuan dan agenda yang disetujui untuk hari ini ({{ \Carbon\Carbon::now()->locale('id')->translatedFormat('l, d F Y') }}).</p>
+                    </div>
+                    <span style="font-size: 0.78rem; font-weight: 700; background: var(--green-soft); color: var(--board); padding: 4px 12px; border-radius: 999px;">
+                        {{ count($todayEvents ?? []) }} Agenda Terjadwal
+                    </span>
+                </div>
+                <div class="panel-body">
+                    @forelse($todayEvents ?? [] as $event)
+                        @if($loop->first)<div class="agenda-today-grid">@endif
+                        <div class="agenda-card">
+                            <div class="agenda-card-head">
+                                <span class="room-tag">🏛️ {{ $event->room_name }}</span>
+                                <span class="agenda-status {{ $event->status }}">{{ ucfirst($event->status) }}</span>
+                            </div>
+                            <h3>{{ $event->event_name }}</h3>
+                            <div class="meta">
+                                <span>⏱️ {{ $formatSessionTime($event->start_time, $event->end_time) }}</span>
+                            </div>
+                        </div>
+                        @if($loop->last)</div>@endif
+                    @empty
+                        <div class="empty">
+                            <b>Belum ada agenda hari ini</b>
+                            Pengajuan dan agenda untuk hari ini akan ditampilkan di sini.
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+
+                <div style="margin-top: 24px;">
+                    <section class="panel" id="agenda">
+                <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h2>Daftar agenda</h2>
+                        <p>Pantau agenda terkini, agenda hari ini, dan kegiatan yang akan datang.</p>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="agenda-filter-tabs">
+                        <button type="button" class="agenda-filter-btn active" onclick="switchGuruAgendaTab('today', this)">
+                            📅 Hari Ini <span class="counter-pill">{{ count($todayEvents ?? []) }}</span>
+                        </button>
+                        <button type="button" class="agenda-filter-btn" onclick="switchGuruAgendaTab('upcoming', this)">
+                            🚀 Yang Akan Datang <span class="counter-pill">{{ count($upcomingEvents ?? []) }}</span>
+                        </button>
+                        <button type="button" class="agenda-filter-btn" onclick="switchGuruAgendaTab('all', this)">
+                            📋 Agenda Terkini <span class="counter-pill">{{ count($events ?? []) }}</span>
+                        </button>
+                    </div>
+
+                    {{-- 1. Tab Hari Ini --}}
+                    <div id="guru-tab-today" class="guru-tab-view">
+                        @forelse($todayEvents ?? [] as $event)
+                            @if($loop->first)<ul class="agenda">@endif
+                            @php $tgl = \Carbon\Carbon::parse($event->date)->locale('id'); @endphp
+                            <li class="event">
+                                <div class="date" aria-hidden="true">
+                                    <b>{{ $tgl->format('d') }}</b>
+                                    <span>{{ $tgl->translatedFormat('M Y') }}</span>
+                                </div>
+                                <div>
+                                    <h3>{{ $event->event_name }}</h3>
+                                    <div class="meta">
+                                        <span>📍 {{ $event->room_name }}</span>
+                                        <span>🕒 {{ $formatSessionTime($event->start_time, $event->end_time) }}</span>
+                                        <span class="agenda-status {{ $event->status }}">{{ ucfirst($event->status) }}</span>
+                                    </div>
+                                    @if(!empty($event->move_reason))
+                                        <div class="note"><strong>Catatan Waka:</strong> {{ $event->move_reason }}</div>
+                                    @endif
+                                </div>
+                            </li>
+                            @if($loop->last)</ul>@endif
+                        @empty
+                            <div class="empty">
+                                <b>Belum ada agenda hari ini</b>
+                                Belum ada kegiatan ruangan yang dijadwalkan untuk hari ini.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    {{-- 2. Tab Yang Akan Datang --}}
+                    <div id="guru-tab-upcoming" class="guru-tab-view" style="display: none;">
+                        @forelse($upcomingEvents ?? [] as $event)
+                            @if($loop->first)<ul class="agenda">@endif
+                            @php $tgl = \Carbon\Carbon::parse($event->date)->locale('id'); @endphp
+                            <li class="event">
+                                <div class="date" aria-hidden="true">
+                                    <b>{{ $tgl->format('d') }}</b>
+                                    <span>{{ $tgl->translatedFormat('M Y') }}</span>
+                                </div>
+                                <div>
+                                    <h3>{{ $event->event_name }}</h3>
+                                    <div class="meta">
+                                        <span>📍 {{ $event->room_name }}</span>
+                                        <span>🕒 {{ $formatSessionTime($event->start_time, $event->end_time) }}</span>
+                                        <span class="agenda-status {{ $event->status }}">{{ ucfirst($event->status) }}</span>
+                                    </div>
+                                    @if(!empty($event->move_reason))
+                                        <div class="note"><strong>Catatan Waka:</strong> {{ $event->move_reason }}</div>
+                                    @endif
+                                </div>
+                            </li>
+                            @if($loop->last)</ul>@endif
+                        @empty
+                            <div class="empty">
+                                <b>Tidak ada agenda yang akan datang</b>
+                                Belum ada peminjaman ruangan yang terjadwal untuk hari-hari berikutnya.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    {{-- 3. Tab Agenda Terkini / Semua --}}
+                    <div id="guru-tab-all" class="guru-tab-view" style="display: none;">
+                        @forelse($events ?? [] as $event)
+                            @if($loop->first)<ul class="agenda">@endif
+                            @php $tgl = \Carbon\Carbon::parse($event->date)->locale('id'); @endphp
+                            <li class="event">
+                                <div class="date" aria-hidden="true">
+                                    <b>{{ $tgl->format('d') }}</b>
+                                    <span>{{ $tgl->translatedFormat('M Y') }}</span>
+                                </div>
+                                <div>
+                                    <h3>{{ $event->event_name }}</h3>
+                                    <div class="meta">
+                                        <span>📍 {{ $event->room_name }}</span>
+                                        <span>🕒 {{ $formatSessionTime($event->start_time, $event->end_time) }}</span>
+                                        <span class="agenda-status {{ $event->status }}">{{ ucfirst($event->status) }}</span>
+                                    </div>
+                                    @if(!empty($event->move_reason))
+                                        <div class="note"><strong>Catatan Waka:</strong> {{ $event->move_reason }}</div>
+                                    @endif
+                                </div>
+                            </li>
+                            @if($loop->last)</ul>@endif
+                        @empty
+                            <div class="empty">
+                                <b>Belum ada agenda</b>
+                                Ajukan agenda pertama Anda melalui formulir "Pinjam ruangan".
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </section>
+                </div>
+            </div>
+
+            {{-- PAGE 2: AJUKAN & LAPOR --}}
+            <div class="admin-page-view" id="page-ajukan" data-page="ajukan">
+                <section class="panel" id="ajukan">
+                <div class="panel-head">
+                    <h2>Ajukan & Lapor</h2>
+                    <p>Pilih jenis formulir yang ingin Anda isi.</p>
+                </div>
+
+                <div class="tabs" role="tablist">
+                    <button class="tab" role="tab" id="tab-pinjam" aria-selected="true" aria-controls="panel-pinjam" type="button">Pinjam ruangan</button>
+                    <button class="tab" role="tab" id="tab-rusak" aria-selected="false" aria-controls="panel-rusak" type="button">Lapor kerusakan</button>
+                </div>
+
+                {{-- Form 1: Pinjam Ruangan --}}
+                <div class="panel-body tab-panel" id="panel-pinjam" role="tabpanel" aria-labelledby="tab-pinjam">
+                    <form action="{{ route('events.store') }}" method="POST">
+                        @csrf
+                        <div class="field">
+                            <label for="event_name">Nama agenda</label>
+                            <input type="text" id="event_name" name="event_name" required placeholder="Contoh: KBM Praktikum / Extrakulikuler OSIS">
+                        </div>
+                        <div class="field">
+                            <label for="room_pinjam">Ruangan</label>
+                            <select id="room_pinjam" name="room_id" required>
+                                <option value="" disabled selected>Pilih ruangan</option>
+                                <x-room-options :rooms="$rooms ?? collect()" :selected-room-id="old('room_id')" />
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="field" style="margin-bottom: 0;">
+                                <label for="date">Tanggal pelaksanaan (mulai)</label>
+                                <input type="date" id="date" name="date" min="{{ today()->toDateString() }}" required>
+                            </div>
+                            <div class="field" style="margin-bottom: 0;">
+                                <label for="end_date">Tanggal selesai <small style="color: var(--ink-muted); font-weight: normal;">(opsional jika 1 hari)</small></label>
+                                <input type="date" id="end_date" name="end_date" min="{{ today()->toDateString() }}">
+                            </div>
+                        </div>
+                        <small style="display: block; margin-top: 4px; margin-bottom: 14px; font-size: 0.76rem; color: var(--ink-muted);">
+                            💡 Peminjaman dapat dilakukan untuk 1 hari atau rentang multi-hari berturut-turut (maksimal 30 hari).
+                        </small>
+
+                        {{-- Sesi Peminjaman (45 Menit per sesi, 07:15 - 15:30) --}}
+                        <div class="field">
+                            <label style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>Pilihan Sesi Peminjaman (45 Menit / Sesi)</span>
+                                <span style="font-size: 0.76rem; font-weight: normal; color: var(--board); background: var(--green-soft); padding: 2px 8px; border-radius: 6px;">
+                                    Jam Belajar: 07.15 - 15.30 (11 Sesi)
+                                </span>
+                            </label>
+                            
+                            <div class="row">
+                                <div class="field" style="margin-bottom: 0;">
+                                    <label for="select_session_start" style="font-size: 0.8rem; color: var(--ink-muted);">Mulai Dari Sesi</label>
+                                    <select id="select_session_start" required>
+                                        <option value="07:15" data-session="1" selected>Sesi 1 (07:15 - 08:00)</option>
+                                        <option value="08:00" data-session="2">Sesi 2 (08:00 - 08:45)</option>
+                                        <option value="08:45" data-session="3">Sesi 3 (08:45 - 09:30)</option>
+                                        <option value="09:30" data-session="4">Sesi 4 (09:30 - 10:15)</option>
+                                        <option value="10:15" data-session="5">Sesi 5 (10:15 - 11:00)</option>
+                                        <option value="11:00" data-session="6">Sesi 6 (11:00 - 11:45)</option>
+                                        <option value="11:45" data-session="7">Sesi 7 (11:45 - 12:30)</option>
+                                        <option value="12:30" data-session="8">Sesi 8 (12:30 - 13:15)</option>
+                                        <option value="13:15" data-session="9">Sesi 9 (13:15 - 14:00)</option>
+                                        <option value="14:00" data-session="10">Sesi 10 (14:00 - 14:45)</option>
+                                        <option value="14:45" data-session="11">Sesi 11 (14:45 - 15:30)</option>
+                                    </select>
+                                </div>
+                                <div class="field" style="margin-bottom: 0;">
+                                    <label for="select_session_end" style="font-size: 0.8rem; color: var(--ink-muted);">Sampai Selesai Sesi</label>
+                                    <select id="select_session_end" required>
+                                        <option value="08:00" data-session="1" selected>Selesai Sesi 1 (08:00)</option>
+                                        <option value="08:45" data-session="2">Selesai Sesi 2 (08:45)</option>
+                                        <option value="09:30" data-session="3">Selesai Sesi 3 (09:30)</option>
+                                        <option value="10:15" data-session="4">Selesai Sesi 4 (10:15)</option>
+                                        <option value="11:00" data-session="5">Selesai Sesi 5 (11:00)</option>
+                                        <option value="11:45" data-session="6">Selesai Sesi 6 (11:45)</option>
+                                        <option value="12:30" data-session="7">Selesai Sesi 7 (12:30)</option>
+                                        <option value="13:15" data-session="8">Selesai Sesi 8 (13:15)</option>
+                                        <option value="14:00" data-session="9">Selesai Sesi 9 (14:00)</option>
+                                        <option value="14:45" data-session="10">Selesai Sesi 10 (14:45)</option>
+                                        <option value="15:30" data-session="11">Selesai Sesi 11 (15:30)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {{-- Kartu Ringkasan Sesi Terpilih --}}
+                            <div id="session-summary-box" style="margin-top: 10px; padding: 10px 14px; background: var(--green-soft); border: 1px solid rgba(18, 60, 51, 0.12); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 1.1rem;">⏱️</span>
+                                    <div>
+                                        <strong id="summary-session-text" style="color: var(--board);">Sesi 1 (45 Menit)</strong>
+                                        <div id="summary-time-text" style="font-size: 0.78rem; color: var(--ink-muted);">Pukul 07:15 - 08:00 WIB</div>
+                                    </div>
+                                </div>
+                                <span id="summary-badge" style="background: var(--board); color: #fff; font-weight: 600; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px;">
+                                    1 Sesi
+                                </span>
+                            </div>
+
+                            {{-- Hidden inputs yang dikirim ke controller Laravel --}}
+                            <input type="hidden" id="start_time" name="start_time" value="07:15">
+                            <input type="hidden" id="end_time" name="end_time" value="08:00">
+                        </div>
+                        <button type="submit" class="btn">Ajukan agenda</button>
+                    </form>
+                </div>
+
+                {{-- Form 2: Lapor Kerusakan --}}
+                <div class="panel-body tab-panel" id="panel-rusak" role="tabpanel" aria-labelledby="tab-rusak" hidden>
+                    <form action="{{ route('complaints.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="field">
+                            <label for="room_rusak">Lokasi kerusakan</label>
+                            <select id="room_rusak" name="room_id" required>
+                                <option value="" disabled selected>Pilih ruangan</option>
+                                <x-room-options :rooms="$rooms ?? collect()" :selected-room-id="old('room_id')" />
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="description">Apa yang rusak?</label>
+                            <textarea id="description" name="description" rows="4" required placeholder="Contoh: Proyektor tidak menyala, kipas angin mati, atau kursi rusak."></textarea>
+                        </div>
+                        <x-complaint-photo-field />
+                        <button type="submit" class="btn btn-dark">Kirim laporan</button>
+                    </form>
+                </div>
+            </section>
+            </div>
+
+            {{-- PAGE 3: STATUS KERUSAKAN --}}
+            <div class="admin-page-view" id="page-kerusakan" data-page="kerusakan">
+                <section class="panel" id="kerusakan">
+                <div class="panel-head">
+                    <h2>Status Laporan Kerusakan</h2>
+                    <p>Pantau tindak lanjut perbaikan dari tim Sarpras.</p>
+                </div>
+                <div class="panel-body">
+                    @forelse($complaints ?? [] as $complaint)
+                        @if($loop->first)<ul class="complaint-list">@endif
+                        <li class="complaint-item">
+                            <div class="complaint-head">
+                                <h4>📍 {{ $complaint->room_name ?? 'Ruangan' }}</h4>
+                                @php $status = $complaint->status_repair; @endphp
+                                @if($status === 'Sudah Diperbaiki')
+                                    <span class="badge badge-success">{{ $status }}</span>
+                                @elseif($status === 'Menunggu Spare Part')
+                                    <span class="badge badge-process">{{ $status }}</span>
+                                @else
+                                    <span class="badge badge-pending">{{ $status }}</span>
+                                @endif
+                            </div>
+                            <div class="complaint-desc">{{ $complaint->description }}</div>
+                            <div class="complaint-time">Dilaporkan: {{ \Carbon\Carbon::parse($complaint->reported_at ?? now())->translatedFormat('d M Y, H:i') }} WIB</div>
+                        </li>
+                        @if($loop->last)</ul>@endif
+                    @empty
+                        <div class="empty">
+                            <b>Tidak ada laporan kerusakan</b>
+                            Belum ada catatan kerusakan yang dilaporkan saat ini.
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+            </div>
+
+            {{-- PAGE 4: KALENDER SEKOLAH --}}
+            <div class="admin-page-view" id="page-kalender" data-page="kalender">
+                <section class="panel" id="kalender">
+                    <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h2>Kalender Agenda Sekolah</h2>
+                            <p>Jadwal dan pemakaian seluruh ruangan sekolah dalam tampilan kalender bulanan interaktif.</p>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div class="cal-month-stepper">
+                                <button type="button" id="role-cal-prev" aria-label="Bulan sebelumnya">‹</button>
+                                <span class="cal-month-header" id="role-cal-month-title">Memuat...</span>
+                                <button type="button" id="role-cal-next" aria-label="Bulan berikutnya">›</button>
+                            </div>
+                            <button type="button" id="role-cal-today" class="cal-btn-today">📅 Hari Ini</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="padding: 0;">
+                        <div class="cal-card" style="border: 0; box-shadow: none; border-radius: 0;">
+                            <div class="cal-weekdays" aria-hidden="true">
+                                <div class="cal-weekday">Sen</div><div class="cal-weekday">Sel</div><div class="cal-weekday">Rab</div>
+                                <div class="cal-weekday">Kam</div><div class="cal-weekday">Jum</div><div class="cal-weekday">Sab</div><div class="cal-weekday">Min</div>
+                            </div>
+                            <div class="cal-days" id="role-calendar-days" aria-live="polite"></div>
+                            <p class="cal-message" id="role-calendar-message" role="status">Memuat agenda...</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Tab Switcher
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => tab.addEventListener('click', () => {
+            tabs.forEach(t => {
+                const on = t === tab;
+                t.setAttribute('aria-selected', on);
+                document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+            });
+        }));
+
+        // Notifikasi Toast
+        document.querySelectorAll('.toast').forEach(t => setTimeout(() => t.remove(), 6000));
+
+        // Sinkronisasi Pemilihan Sesi Peminjaman (45 Menit, 07:15 - 15:30)
+        const sessionStart = document.getElementById('select_session_start');
+        const sessionEnd = document.getElementById('select_session_end');
+        const hiddenStartTime = document.getElementById('start_time');
+        const hiddenEndTime = document.getElementById('end_time');
+        const summarySession = document.getElementById('summary-session-text');
+        const summaryTime = document.getElementById('summary-time-text');
+        const summaryBadge = document.getElementById('summary-badge');
+
+        const sessionEndTimes = {
+            1: '08:00',
+            2: '08:45',
+            3: '09:30',
+            4: '10:15',
+            5: '11:00',
+            6: '11:45',
+            7: '12:30',
+            8: '13:15',
+            9: '14:00',
+            10: '14:45',
+            11: '15:30',
+        };
+
+        function updateSessionBooking() {
+            if (!sessionStart || !sessionEnd) return;
+            
+            const startSess = parseInt(sessionStart.selectedOptions[0].getAttribute('data-session'));
+            let endSess = parseInt(sessionEnd.selectedOptions[0].getAttribute('data-session'));
+            
+            if (endSess < startSess) {
+                endSess = startSess;
+                sessionEnd.value = sessionEndTimes[endSess];
+            }
+            
+            const startTimeVal = sessionStart.value;
+            const endTimeVal = sessionEndTimes[endSess];
+            
+            hiddenStartTime.value = startTimeVal;
+            hiddenEndTime.value = endTimeVal;
+            
+            const totalSessions = (endSess - startSess) + 1;
+            const totalMinutes = totalSessions * 45;
+            
+            if (startSess === endSess) {
+                summarySession.textContent = `Sesi ${startSess} (${totalMinutes} Menit)`;
+            } else {
+                summarySession.textContent = `Sesi ${startSess} s/d Sesi ${endSess} (${totalMinutes} Menit)`;
+            }
+            
+            summaryTime.textContent = `Pukul ${startTimeVal} - ${endTimeVal} WIB`;
+            summaryBadge.textContent = `${totalSessions} Sesi Terpilih`;
+        }
+
+        if (sessionStart && sessionEnd) {
+            sessionStart.addEventListener('change', function() {
+                const startSess = parseInt(this.selectedOptions[0].getAttribute('data-session'));
+                const endSess = parseInt(sessionEnd.selectedOptions[0].getAttribute('data-session'));
+                if (endSess < startSess) {
+                    sessionEnd.value = sessionEndTimes[startSess];
+                }
+                updateSessionBooking();
+            });
+            sessionEnd.addEventListener('change', function() {
+                updateSessionBooking();
+            });
+            updateSessionBooking();
+        }
+
+        // Switch Tab Kategori Agenda (Hari Ini, Akan Datang, Terkini)
+        function switchGuruAgendaTab(tabKey, btn) {
+            document.querySelectorAll('.agenda-filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            const views = {
+                'today': document.getElementById('guru-tab-today'),
+                'upcoming': document.getElementById('guru-tab-upcoming'),
+                'all': document.getElementById('guru-tab-all')
+            };
+
+            Object.keys(views).forEach(k => {
+                if (views[k]) views[k].style.display = (k === tabKey) ? 'block' : 'none';
+            });
+        }
+        // Multi-Page Switcher for Sidebar Options
+        function switchDashboardPage(pageKey, updateHistory = true) {
+            if (!pageKey) pageKey = 'agenda';
+            if (pageKey === 'dashboard') pageKey = 'agenda';
+            if (pageKey === 'calendar') pageKey = 'kalender';
+
+            const pages = document.querySelectorAll('.admin-page-view');
+            let targetPage = document.getElementById('page-' + pageKey);
+            if (!targetPage) {
+                pageKey = 'agenda';
+                targetPage = document.getElementById('page-agenda');
+            }
+
+            pages.forEach(p => p.classList.remove('active'));
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+
+            const navLinks = document.querySelectorAll('.sidebar-main-nav a[data-page]');
+            navLinks.forEach(link => {
+                if (link.getAttribute('data-page') === pageKey) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+
+            if (updateHistory) {
+                const url = new URL(window.location);
+                url.searchParams.set('page', pageKey);
+                window.history.pushState({ page: pageKey }, '', url);
+            }
+
+            window.scrollTo({ top: 0, behavior: 'instant' });
+
+            if (pageKey === 'kalender') {
+                loadRoleCalendar();
+            }
+        }
+
+        // Interactive Calendar inside Dashboard
+        let calDisplayedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const calMonthFormatter = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
+
+        async function loadRoleCalendar() {
+            const titleEl = document.getElementById('role-cal-month-title');
+            const daysEl = document.getElementById('role-calendar-days');
+            const msgEl = document.getElementById('role-calendar-message');
+            if (!titleEl || !daysEl) return;
+
+            titleEl.textContent = calMonthFormatter.format(calDisplayedMonth);
+            msgEl.textContent = 'Memuat agenda kalender...';
+
+            const firstDay = new Date(calDisplayedMonth.getFullYear(), calDisplayedMonth.getMonth(), 1);
+            const lastDay = new Date(calDisplayedMonth.getFullYear(), calDisplayedMonth.getMonth() + 1, 0);
+            const mondayOffset = (firstDay.getDay() + 6) % 7;
+            const start = new Date(firstDay);
+            start.setDate(firstDay.getDate() - mondayOffset);
+            const end = new Date(lastDay);
+            end.setDate(lastDay.getDate() + ((7 - ((lastDay.getDay() + 6) % 7) - 1) % 7));
+
+            const formatDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+            try {
+                const res = await fetch(`/api/calendar/events?from=${formatDate(start)}&to=${formatDate(end)}`, {
+                    headers: { Accept: 'application/json' }
+                });
+                if (!res.ok) throw new Error('Gagal memuat agenda');
+                const json = await res.json();
+                const events = json.data || [];
+                renderRoleCalendar(events, start, end);
+                msgEl.textContent = events.length 
+                    ? `${events.length} agenda disetujui pada periode ini.` 
+                    : 'Tidak ada agenda yang disetujui pada periode ini.';
+            } catch (err) {
+                msgEl.textContent = 'Gagal memuat agenda kalender.';
+            }
+        }
+
+        function renderRoleCalendar(events, start, end) {
+            const daysEl = document.getElementById('role-calendar-days');
+            daysEl.replaceChildren();
+
+            const formatDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            const todayStr = formatDate(new Date());
+
+            const eventsByDate = new Map();
+            events.forEach(e => {
+                const d = String(e.date).slice(0, 10);
+                if (!eventsByDate.has(d)) eventsByDate.set(d, []);
+                eventsByDate.get(d).push(e);
+            });
+
+            const cur = new Date(start);
+            while (cur <= end) {
+                const dStr = formatDate(cur);
+                const cell = document.createElement('div');
+                cell.className = 'cal-day' + (cur.getMonth() !== calDisplayedMonth.getMonth() ? ' outside' : '') + (dStr === todayStr ? ' today' : '');
+
+                const num = document.createElement('div');
+                num.className = 'cal-day-number';
+                num.textContent = cur.getDate();
+                cell.appendChild(num);
+
+                const dayEvents = eventsByDate.get(dStr) || [];
+                dayEvents.forEach(ev => {
+                    const item = document.createElement('div');
+                    item.className = 'cal-event-item';
+                    const timeStr = (ev.start_time || '').slice(0, 5);
+                    const roomName = ev.room?.room_name || 'Ruangan';
+                    item.innerHTML = `<span class="cal-time">${timeStr} · ${roomName}</span><strong>${ev.event_name}</strong>`;
+                    cell.appendChild(item);
+                });
+
+                daysEl.appendChild(cell);
+                cur.setDate(cur.getDate() + 1);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Sidebar item click listeners
+            document.querySelectorAll('.sidebar-main-nav a[data-page]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const pageKey = this.getAttribute('data-page');
+                    if (pageKey) {
+                        e.preventDefault();
+                        switchDashboardPage(pageKey, true);
+                    }
+                });
+            });
+
+            // Calendar month controls
+            document.getElementById('role-cal-prev')?.addEventListener('click', () => {
+                calDisplayedMonth = new Date(calDisplayedMonth.getFullYear(), calDisplayedMonth.getMonth() - 1, 1);
+                loadRoleCalendar();
+            });
+            document.getElementById('role-cal-next')?.addEventListener('click', () => {
+                calDisplayedMonth = new Date(calDisplayedMonth.getFullYear(), calDisplayedMonth.getMonth() + 1, 1);
+                loadRoleCalendar();
+            });
+            document.getElementById('role-cal-today')?.addEventListener('click', () => {
+                calDisplayedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+                loadRoleCalendar();
+            });
+
+            // Detect initial page from URL param, hash, or validation errors
+            const urlParams = new URLSearchParams(window.location.search);
+            const pageFromQuery = urlParams.get('page');
+            const hash = window.location.hash.replace('#', '');
+
+            let defaultPage = 'agenda';
+            @if($errors->hasAny(['event_name', 'room_id', 'date', 'end_date', 'start_time', 'end_time', 'notes', 'complaint_desc', 'photo']))
+                defaultPage = 'ajukan';
+            @endif
+
+            const targetPage = pageFromQuery || hash || defaultPage;
+            switchDashboardPage(targetPage, false);
+        });
+
+        window.addEventListener('popstate', (e) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pageParam = urlParams.get('page') || 'agenda';
+            switchDashboardPage(pageParam, false);
+        });
+    </script>
 </body>
 </html>

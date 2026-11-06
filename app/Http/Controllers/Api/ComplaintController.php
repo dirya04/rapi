@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Complaint;
 use App\Models\Room;
 use App\Services\ComplaintStatusService;
+use App\Services\ComplaintWhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,19 +19,29 @@ class ComplaintController extends Controller
     public function index(Request $request)
     {
         $query = Complaint::with([
-            'room:id,room_name,pic_id',
-            'reporter:id,fullname',
+            'room:id,room_name,room_type,pic_id',
+            'reporter:id,fullname,phone_number',
             'handler:id,fullname',
         ]);
-        $role = $request->user()->role?->role_name;
+        $user = $request->user();
+        $role = $user?->role?->role_name;
 
         if ($role === 'PIC') {
-            $query->whereHas('room', fn ($q) => $q->where('pic_id', $request->user()->id));
-        } elseif ($role !== 'Admin') {
-            $query->where('reporter_id', $request->user()->id);
+            $isSarpras = str_contains(strtolower($user->username ?? ''), 'sarpras')
+                || str_contains(strtolower($user->fullname ?? ''), 'sarpras');
+            if (!$isSarpras) {
+                $query->where(function ($q) use ($user) {
+                    $q->whereHas('room', fn ($sub) => $sub->where('pic_id', $user->id))
+                      ->orWhere('handler_id', $user->id);
+                });
+            }
+        } elseif (!in_array($role, ['Admin', 'Waka'], true) && $user) {
+            $query->where('reporter_id', $user->id);
         }
 
-        return response()->json(['data' => $query->latest('reported_at')->paginate(20)]);
+        return response()->json([
+            'data' => $query->latest('reported_at')->get(),
+        ]);
     }
 
     public function store(Request $request)
@@ -38,25 +49,61 @@ class ComplaintController extends Controller
         $data = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'description' => ['required', 'string', 'max:2000'],
-            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'facility_name' => ['nullable', 'string', 'max:150'],
+            'photo' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],
+        ], [
+            'photo.required' => 'Foto bukti kerusakan wajib dilampirkan.',
+            'photo.uploaded' => 'Foto tidak dapat diunggah. Pastikan ukuran file maksimal 10 MB.',
+            'photo.max' => 'Ukuran foto maksimal 10 MB.',
+            'photo.image' => 'Bukti foto harus berupa file gambar yang valid.',
+            'photo.mimes' => 'Format foto harus JPG, JPEG, atau PNG.',
+            'photo.file' => 'Bukti foto harus berupa file gambar yang valid.',
         ]);
 
         $room = Room::findOrFail($data['room_id']);
         abort_unless($room->is_active, 422, 'Ruangan tidak aktif.');
 
-        // Re-encode the image to JPEG to reduce its size and remove source metadata.
-        $encoded = Image::decode($request->file('photo'))
-            ->scaleDown(width: 1600, height: 1600)
-            ->encodeUsingMediaType('image/jpeg', quality: 78);
-        $path = 'complaints/'.Str::uuid().'.jpg';
-        abort_unless(Storage::disk('public')->put($path, (string) $encoded), 500,
-            'Foto pengaduan gagal disimpan.');
+        $photo = $request->file('photo');
+        $ext = strtolower($photo->getClientOriginalExtension() ?: 'jpg');
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+            $ext = 'jpg';
+        }
+        $filename = Str::uuid() . '.' . $ext;
+        $path = 'complaints/' . $filename;
+
+        // Try re-encoding with Intervention Image if available, fallback to native storeAs
+        $saved = false;
+        try {
+            $encoded = Image::decode($photo)
+                ->scaleDown(width: 1600, height: 1600)
+                ->encodeUsingMediaType('image/jpeg', quality: 78);
+            $path = 'complaints/' . Str::uuid() . '.jpg';
+            $saved = Storage::disk('public')->put($path, (string) $encoded);
+        } catch (Throwable) {
+            $storedPath = $photo->storeAs('complaints', $filename, 'public');
+            if ($storedPath) {
+                $path = $storedPath;
+                $saved = true;
+            }
+        }
+
+        abort_unless($saved, 500, 'Foto pengaduan gagal disimpan ke server.');
+
+        $description = trim($data['description']);
+        if ($request->filled('facility_name')) {
+            $facility = trim($request->input('facility_name'));
+            if (!str_contains($description, $facility)) {
+                $description = "[$facility] " . $description;
+            }
+        }
+
+        $reporterId = $request->user()?->id ?? (int) $request->input('reporter_id', 1);
 
         try {
             $complaint = Complaint::create([
                 'room_id' => $room->id,
-                'reporter_id' => $request->user()->id,
-                'description' => $data['description'],
+                'reporter_id' => $reporterId,
+                'description' => $description,
                 'photo_path' => $path,
                 'status_repair' => 'Belum Diperbaiki',
                 'reported_at' => now(),
@@ -67,8 +114,8 @@ class ComplaintController extends Controller
         }
 
         return response()->json([
-            'message' => 'Pengaduan berhasil dikirim.',
-            'data' => $complaint->load('room:id,room_name'),
+            'message' => 'Laporan pengaduan fasilitas berhasil dikirim!',
+            'data' => $complaint->load(['room:id,room_name,pic_id', 'reporter:id,fullname']),
             'photo_url' => Storage::disk('public')->url($path),
         ], 201);
     }
@@ -79,48 +126,26 @@ class ComplaintController extends Controller
             'status_repair' => ['required', Rule::in([
                 'Belum Diperbaiki', 'Menunggu Spare Part', 'Sudah Diperbaiki',
             ])],
+            'progress_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $updated = $statuses->update($complaint, $request->user(), $data['status_repair']);
+        $updated = $statuses->update(
+            $complaint,
+            $request->user(),
+            $data['status_repair'],
+            $data['progress_note'] ?? null
+        );
 
         return response()->json(['message' => 'Status penanganan diperbarui.', 'data' => $updated]);
     }
 
-    public function whatsapp(Request $request, Complaint $complaint)
+    public function whatsapp(Request $request, Complaint $complaint, ComplaintWhatsAppService $whatsapp)
     {
-        abort_unless($request->user()->role?->role_name === 'Admin', 403);
-        abort_unless($complaint->status_repair === 'Belum Diperbaiki', 422,
-            'Peringatan hanya tersedia untuk pengaduan yang belum diperbaiki.');
-        abort_unless($complaint->reported_at->lte(
-            now()->subHours((int) config('rapi.escalation_hours', 24))
-        ), 422, 'Batas waktu eskalasi belum terlampaui.');
-
-        $complaint->load('room.pic:id,fullname,phone_number');
-        $pic = $complaint->room?->pic;
-        abort_unless($pic && $pic->phone_number, 422, 'Nomor WhatsApp PIC belum diatur.');
-
-        $number = preg_replace('/\\D+/', '', $pic->phone_number);
-        if (str_starts_with($number, '00')) {
-            $number = substr($number, 2);
-        } elseif (str_starts_with($number, '0')) {
-            $number = '62'.substr($number, 1);
-        } elseif (str_starts_with($number, '8')) {
-            $number = '62'.$number;
-        }
-        abort_unless(preg_match('/^\\d{9,15}$/', $number) === 1, 422,
-            'Nomor WhatsApp PIC tidak valid.');
-
-        $message = implode("\n", [
-            'Peringatan RAPI-Sekolah: pengaduan kerusakan perlu ditindaklanjuti.',
-            'Nomor laporan: #'.$complaint->id,
-            'Ruang: '.$complaint->room->room_name,
-            'Waktu laporan: '.$complaint->reported_at->format('d-m-Y H:i'),
-            'Status: '.$complaint->status_repair,
-            'Detail: '.$complaint->description,
-        ]);
+        abort_unless(in_array($request->user()->role?->role_name, ['Admin', 'Waka'], true), 403);
+        [$url, $message] = $whatsapp->generate($complaint);
 
         return response()->json([
-            'url' => 'https://wa.me/'.$number.'?text='.rawurlencode($message),
+            'url' => $url,
             'message' => $message,
         ]);
     }

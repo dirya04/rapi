@@ -38,7 +38,7 @@ class UserController extends Controller
         ]);
 
         $role = Role::findOrFail($data['role_id']);
-        abort_unless(in_array($role->role_name, ['Admin', 'PIC', 'Guru', 'Organisasi'], true), 422,
+        abort_unless(in_array($role->role_name, ['Admin', 'Waka', 'PIC', 'Guru', 'Organisasi'], true), 422,
             'Role tidak termasuk role yang didukung.');
         $data['password'] = Hash::make($data['password']);
 
@@ -55,9 +55,15 @@ class UserController extends Controller
             'role_id' => ['sometimes', 'required', 'integer', Rule::exists('roles', 'id')],
         ]);
 
+        abort_if(
+            isset($data['password']) && $request->user()->role?->role_name !== 'Admin',
+            403,
+            'Hanya Admin yang dapat mengubah kata sandi pengguna.'
+        );
+
         if (isset($data['role_id'])) {
             $role = Role::findOrFail($data['role_id']);
-            abort_unless(in_array($role->role_name, ['Admin', 'PIC', 'Guru', 'Organisasi'], true), 422,
+            abort_unless(in_array($role->role_name, ['Admin', 'Waka', 'PIC', 'Guru', 'Organisasi'], true), 422,
                 'Role tidak termasuk role yang didukung.');
 
             if ($role->role_name !== 'PIC' && $user->managedRooms()->where('is_active', true)->exists()) {

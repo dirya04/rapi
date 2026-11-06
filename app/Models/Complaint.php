@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Complaint extends Model
 {
@@ -12,6 +13,7 @@ class Complaint extends Model
         'description',
         'photo_path',
         'status_repair',
+        'progress_note',
         'handler_id',
         'reported_at',
     ];
@@ -19,6 +21,17 @@ class Complaint extends Model
     protected $casts = [
         'reported_at' => 'datetime',
     ];
+
+    protected $appends = ['photo_url'];
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        if (empty($this->photo_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->photo_path);
+    }
 
     public function room()
     {

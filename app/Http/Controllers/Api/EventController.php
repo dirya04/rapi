@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Services\EventBookingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class EventController extends Controller
@@ -19,7 +18,7 @@ class EventController extends Controller
         ]);
 
         $events = Event::query()
-            ->select(['id', 'room_id', 'event_name', 'date', 'start_time', 'end_time', 'status'])
+            ->select(['id', 'room_id', 'event_name', 'date', 'end_date', 'start_time', 'end_time', 'status'])
             ->with('room:id,room_name,location')
             ->whereBetween('date', [$data['from'], $data['to']])
             ->whereIn('status', ['approved', 'moved'])
@@ -36,6 +35,7 @@ class EventController extends Controller
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'event_name' => ['required', 'string', 'max:255'],
             'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
         ]);
@@ -60,23 +60,21 @@ class EventController extends Controller
         ]);
     }
 
-    public function decide(Request $request, Event $event)
+    public function decide(Request $request, Event $event, EventBookingService $bookings)
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(['approved', 'rejected'])],
         ]);
 
-        $event = DB::transaction(function () use ($request, $event, $data) {
-            $lockedEvent = Event::whereKey($event->id)->lockForUpdate()->firstOrFail();
-            abort_unless($lockedEvent->status === 'pending', 422, 'Hanya agenda pending yang dapat diputuskan.');
-            $lockedEvent->update([
-                'status' => $data['status'],
-                'approved_by' => $request->user()->id,
-            ]);
+        $event = $bookings->decide($event, $request->user(), $data['status']);
 
-            return $lockedEvent->fresh();
-        });
-
-        return response()->json(['message' => 'Keputusan agenda tersimpan.', 'data' => $event]);
+        return response()->json([
+            'message' => $event->status === 'approved'
+                ? 'Agenda telah disetujui dan aktif.'
+                : ($event->status === 'rejected'
+                    ? 'Agenda ditolak.'
+                    : 'Persetujuan tersimpan; agenda menunggu persetujuan lainnya.'),
+            'data' => $event,
+        ]);
     }
 }

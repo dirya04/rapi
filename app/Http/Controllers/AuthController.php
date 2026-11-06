@@ -4,11 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\TodayAgendaService;
+use Carbon\Carbon;
 
 class AuthController extends Controller {
     // Menampilkan halaman form login
-    public function showLogin() {
-        return view('auth.login');
+    public function showLogin(TodayAgendaService $agenda) {
+        $now = Carbon::now()->format('H:i:s');
+
+        $eventsToday = $agenda->get()
+            ->map(function ($event) use ($now) {
+                if ($now >= $event->start_time && $now <= $event->end_time) {
+                    $event->live_status = 'Sedang Dipakai';
+                } elseif ($now < $event->start_time) {
+                    $event->live_status = 'Akan Datang';
+                } else {
+                    $event->live_status = 'Selesai';
+                }
+
+                $event->event_name = $event->title ?? $event->event_name ?? 'Kegiatan';
+
+                return $event;
+            });
+
+        return view('welcome', compact('eventsToday'));
     }
 
     // Proses autentikasi login & redirect sesuai role
@@ -30,7 +49,7 @@ class AuthController extends Controller {
                 'role_name' => $role,
             ]);
 
-            if ($role === 'Admin') {
+            if (in_array($role, ['Admin', 'Waka'], true)) {
                 return redirect()->intended('/admin/dashboard');
             } elseif ($role === 'PIC') {
                 return redirect()->intended('/pic/dashboard');

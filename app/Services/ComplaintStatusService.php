@@ -9,18 +9,24 @@ use Illuminate\Support\Facades\DB;
 
 class ComplaintStatusService
 {
-    public function update(Complaint $complaint, User $handler, string $status): Complaint
+    public function update(Complaint $complaint, User $handler, string $status, ?string $progressNote = null): Complaint
     {
-        return DB::transaction(function () use ($complaint, $handler, $status) {
+        return DB::transaction(function () use ($complaint, $handler, $status, $progressNote) {
             $lockedComplaint = Complaint::whereKey($complaint->id)->lockForUpdate()->firstOrFail();
             $room = Room::whereKey($lockedComplaint->room_id)->lockForUpdate()->firstOrFail();
 
-            abort_unless($handler->role?->role_name === 'PIC'
-                && (int) $room->pic_id === (int) $handler->id, 403,
+            $isSarpras = str_contains(strtolower($handler->username ?? ''), 'sarpras')
+                || str_contains(strtolower($handler->fullname ?? ''), 'sarpras');
+
+            $canHandle = in_array($handler->role?->role_name, ['Admin', 'Waka'], true)
+                || ($handler->role?->role_name === 'PIC' && ((int) $room->pic_id === (int) $handler->id || $isSarpras));
+
+            abort_unless($canHandle, 403,
                 'Pengaduan ini bukan tanggung jawab ruang Anda.');
 
             $lockedComplaint->update([
                 'status_repair' => $status,
+                'progress_note' => $progressNote ?? $lockedComplaint->progress_note,
                 'handler_id' => $handler->id,
             ]);
 

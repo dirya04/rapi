@@ -85,12 +85,12 @@ class RoleAccessMatrixApiTest extends TestCase
             'date' => $date,
             'start_time' => '16:00',
             'end_time' => '17:00',
-        ], $this->headersFor($users['PIC']))->assertForbidden();
+        ], $this->headersFor($users['PIC']))->assertCreated();
         $this->postJson('/api/complaints', [
             'room_id' => $picRoom->id,
             'description' => 'Laporan PIC',
             'photo' => UploadedFile::fake()->image('laporan-pic.png'),
-        ], $this->headersFor($users['PIC']))->assertForbidden();
+        ], $this->headersFor($users['PIC']))->assertCreated();
     }
 
     public function test_complaint_visibility_and_status_are_scoped_to_reporter_or_assigned_pic(): void
