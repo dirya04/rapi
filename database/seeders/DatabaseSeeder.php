@@ -32,6 +32,36 @@ class DatabaseSeeder extends Seeder {
         ]);
 
         // 3. Akun Petugas PIC Ruang
+        // Akun PIC Spesifik sesuai instruksi (kata sandi: helloworld1)
+        User::updateOrCreate(['username' => 'lega'], [
+            'fullname'     => 'Lega Danu Kumara',
+            'phone_number' => '081234567811',
+            'password'     => Hash::make('helloworld1'),
+            'role_id'      => $picRole->id,
+        ]);
+
+        User::updateOrCreate(['username' => 'wahid'], [
+            'fullname'     => 'Wahid Abduraman',
+            'phone_number' => '081234567812',
+            'password'     => Hash::make('helloworld1'),
+            'role_id'      => $picRole->id,
+        ]);
+
+        User::updateOrCreate(['username' => 'heri'], [
+            'fullname'     => 'Heri Prasetyo',
+            'phone_number' => '081234567813',
+            'password'     => Hash::make('helloworld1'),
+            'role_id'      => $picRole->id,
+        ]);
+
+        User::updateOrCreate(['username' => 'arif'], [
+            'fullname'     => 'Arif Kurniawan',
+            'phone_number' => '081234567801',
+            'password'     => Hash::make('helloworld1'),
+            'role_id'      => $picRole->id,
+        ]);
+
+        // Akun PIC Umum / Bantuan
         User::updateOrCreate(['username' => 'pic_lab'], [
             'fullname'     => 'Petugas PIC Lab',
             'phone_number' => '089876543210',
@@ -43,20 +73,6 @@ class DatabaseSeeder extends Seeder {
             'fullname'     => 'PIC Sarpras Sekolah',
             'phone_number' => '081234567899',
             'password'     => Hash::make('sarpras123'),
-            'role_id'      => $picRole->id,
-        ]);
-
-        User::updateOrCreate(['username' => 'arif'], [
-            'fullname'     => 'Mas Arif',
-            'phone_number' => '081234567801',
-            'password'     => Hash::make('arif123'),
-            'role_id'      => $picRole->id,
-        ]);
-
-        User::updateOrCreate(['username' => 'haris'], [
-            'fullname'     => 'Pak Haris',
-            'phone_number' => '081234567802',
-            'password'     => Hash::make('haris123'),
             'role_id'      => $picRole->id,
         ]);
 

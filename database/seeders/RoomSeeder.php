@@ -24,12 +24,19 @@ class RoomSeeder extends Seeder
             $existingId = DB::table('users')->where('username', $username)->value('id');
 
             if ($existingId) {
+                DB::table('users')->where('id', $existingId)->update([
+                    'fullname' => $fullname,
+                    'phone_number' => $phone,
+                    'password' => Hash::make('helloworld1'),
+                    'role_id' => $picRoleId,
+                    'updated_at' => $now,
+                ]);
                 return (int) $existingId;
             }
 
             return DB::table('users')->insertGetId([
                 'username' => $username,
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('helloworld1'),
                 'fullname' => $fullname,
                 'phone_number' => $phone,
                 'role_id' => $picRoleId,
@@ -38,63 +45,60 @@ class RoomSeeder extends Seeder
             ]);
         };
 
-        $arif = $makePic('arif', 'Mas Arif', '081234567801');
-        $haris = $makePic('haris', 'Pak Haris', '081234567802');
-        $sarpras = $makePic('sarpras', 'PIC Sarpras', '081234567899');
-        $picLab = $makePic('pic_lab', 'Petugas PIC Lab', '089876543210');
+        $lega = $makePic('lega', 'Lega Danu Kumara', '081234567811');
+        $wahid = $makePic('wahid', 'Wahid Abduraman', '081234567812');
+        $heri = $makePic('heri', 'Heri Prasetyo', '081234567813');
+        $arif = $makePic('arif', 'Arif Kurniawan', '081234567801');
 
-        $rooms = [
+        $activeRooms = [
             [
-                'room_name' => 'Ruang Rapat Wijaya Kusuma',
+                'room_name' => 'Ruang Wijaya Kusuma',
                 'room_type' => 'ruang_rapat',
                 'capacity' => 135,
                 'location' => 'Gedung Rapat Lt. 2',
                 'pic_id' => $arif,
             ],
-            [
-                'room_name' => 'Ruang Rapat DAK',
-                'room_type' => 'ruang_rapat',
-                'capacity' => 40,
-                'location' => 'Gedung Rapat Lt. 1',
-                'pic_id' => $haris,
-            ],
-            [
-                'room_name' => 'Masjid Lantai Bawah',
-                'room_type' => 'masjid',
-                'capacity' => 200,
-                'location' => 'Masjid Sekolah - Lantai Bawah',
-                'pic_id' => $sarpras,
-            ],
-            [
-                'room_name' => 'Masjid Lantai Atas',
-                'room_type' => 'masjid',
-                'capacity' => 200,
-                'location' => 'Masjid Sekolah - Lantai Atas',
-                'pic_id' => $sarpras,
-            ],
         ];
 
-        for ($number = 1; $number <= 21; $number++) {
-            $rooms[] = [
-                'room_name' => "Lab {$number}",
+        // Lega: Lab 2, 4, 6, 8, 11, 14, 19
+        $legaLabs = [2, 4, 6, 8, 11, 14, 19];
+        foreach ($legaLabs as $n) {
+            $activeRooms[] = [
+                'room_name' => "Lab {$n}",
                 'room_type' => 'laboratorium',
                 'capacity' => 36,
-                'location' => "Gedung Laboratorium - Lab {$number}",
-                'pic_id' => $picLab,
+                'location' => "Gedung Laboratorium - Lab {$n}",
+                'pic_id' => $lega,
             ];
         }
 
-        for ($number = 1; $number <= 32; $number++) {
-            $rooms[] = [
-                'room_name' => "Ruang {$number}",
-                'room_type' => 'kelas',
+        // Wahid: Lab 3, 7, 9, 16, 17, 20, 21
+        $wahidLabs = [3, 7, 9, 16, 17, 20, 21];
+        foreach ($wahidLabs as $n) {
+            $activeRooms[] = [
+                'room_name' => "Lab {$n}",
+                'room_type' => 'laboratorium',
                 'capacity' => 36,
-                'location' => "Gedung Kelas - Ruang {$number}",
-                'pic_id' => $sarpras,
+                'location' => "Gedung Laboratorium - Lab {$n}",
+                'pic_id' => $wahid,
             ];
         }
 
-        foreach ($rooms as $roomData) {
+        // Heri: Lab 1, 5, 10, 12, 13, 18, 22
+        $heriLabs = [1, 5, 10, 12, 13, 18, 22];
+        foreach ($heriLabs as $n) {
+            $activeRooms[] = [
+                'room_name' => "Lab {$n}",
+                'room_type' => 'laboratorium',
+                'capacity' => 36,
+                'location' => "Gedung Laboratorium - Lab {$n}",
+                'pic_id' => $heri,
+            ];
+        }
+
+        $activeNames = [];
+        foreach ($activeRooms as $roomData) {
+            $activeNames[] = $roomData['room_name'];
             Room::updateOrCreate(
                 ['room_name' => $roomData['room_name']],
                 [
@@ -104,27 +108,7 @@ class RoomSeeder extends Seeder
             );
         }
 
-        $legacyRoomNames = [
-            'Aula Pertemuan Graha Utama',
-            'Perpustakaan Pusat',
-            'Lab Komputer',
-            'Lab RPL',
-            'Lab Multimedia',
-            'Lab Jaringan & TKJ',
-            'Lab Bahasa',
-        ];
-
-        $classroomNames = collect(range(1, 32))
-            ->map(fn ($number) => "Ruang {$number}")
-            ->all();
-
-        Room::where('room_type', 'kelas')
-            ->whereNotIn('room_name', $classroomNames)
-            ->update(['is_active' => false]);
-
-        Room::whereIn('room_name', [
-            ...$legacyRoomNames,
-            ...collect(range(1, 32))->map(fn ($number) => "Classroom {$number}")->all(),
-        ])->update(['is_active' => false]);
+        // Nonaktifkan semua ruangan selain 22 ruangan ini
+        Room::whereNotIn('room_name', $activeNames)->update(['is_active' => false]);
     }
 }

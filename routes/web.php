@@ -63,12 +63,12 @@ $getComplaints = function (?int $picId = null, ?int $reporterId = null) {
     if ($picId !== null) {
         $user = User::find($picId);
         $isSarpras = $user && (str_contains(strtolower($user->username ?? ''), 'sarpras') || str_contains(strtolower($user->fullname ?? ''), 'sarpras'));
-        $isPicLab = $user && (str_contains(strtolower($user->username ?? ''), 'lab') || str_contains(strtolower($user->fullname ?? ''), 'lab'));
+        $isGenericPicLab = $user && ($user->username === 'pic_lab');
         if (!$isSarpras) {
-            $query->where(function ($q) use ($picId, $isPicLab) {
+            $query->where(function ($q) use ($picId, $isGenericPicLab) {
                 $q->where('rooms.pic_id', $picId)
                   ->orWhere('complaints.handler_id', $picId);
-                if ($isPicLab) {
+                if ($isGenericPicLab) {
                     $q->orWhere('rooms.room_type', 'laboratorium');
                 }
             });

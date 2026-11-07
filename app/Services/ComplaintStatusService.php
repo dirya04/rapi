@@ -17,8 +17,7 @@ class ComplaintStatusService
 
             $isSarpras = str_contains(strtolower($handler->username ?? ''), 'sarpras')
                 || str_contains(strtolower($handler->fullname ?? ''), 'sarpras');
-            $isPicLab = str_contains(strtolower($handler->username ?? ''), 'lab')
-                || str_contains(strtolower($handler->fullname ?? ''), 'lab');
+            $isGenericPicLab = $handler->username === 'pic_lab';
 
             $isLabRoom = in_array(strtolower($room->room_type ?? ''), ['laboratorium', 'lab'], true)
                 || str_contains(strtolower($room->room_name ?? ''), 'lab');
@@ -27,7 +26,7 @@ class ComplaintStatusService
                 || ($handler->role?->role_name === 'PIC' && (
                     (int) $room->pic_id === (int) $handler->id
                     || $isSarpras
-                    || ($isPicLab && $isLabRoom)
+                    || ($isGenericPicLab && $isLabRoom)
                 ));
 
             abort_unless($canHandle, 403,

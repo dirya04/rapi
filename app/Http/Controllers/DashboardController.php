@@ -50,7 +50,7 @@ class DashboardController extends Controller
         $picId = auth()->id();
         $user = auth()->user();
         $isSarpras = $user && (str_contains(strtolower($user->username ?? ''), 'sarpras') || str_contains(strtolower($user->fullname ?? ''), 'sarpras'));
-        $isPicLab = $user && (str_contains(strtolower($user->username ?? ''), 'lab') || str_contains(strtolower($user->fullname ?? ''), 'lab'));
+        $isGenericPicLab = $user && ($user->username === 'pic_lab');
 
         $allRooms = Room::query()
             ->leftJoin('users as room_pic', 'rooms.pic_id', '=', 'room_pic.id')
@@ -65,7 +65,7 @@ class DashboardController extends Controller
             ->orderBy('rooms.room_name')
             ->select('rooms.*', 'room_pic.fullname as pic_name');
 
-        if ($isPicLab) {
+        if ($isGenericPicLab) {
             $assignedRoomsQuery->where(function ($q) use ($picId) {
                 $q->where('rooms.pic_id', $picId)
                   ->orWhere('rooms.room_type', 'laboratorium')
@@ -156,11 +156,11 @@ class DashboardController extends Controller
 
         if ($picId !== null) {
             $user = User::find($picId);
-            $isPicLab = $user && (str_contains(strtolower($user->username ?? ''), 'lab') || str_contains(strtolower($user->fullname ?? ''), 'lab'));
-            $query->where(function ($query) use ($picId, $isPicLab) {
+            $isGenericPicLab = $user && ($user->username === 'pic_lab');
+            $query->where(function ($query) use ($picId, $isGenericPicLab) {
                 $query->where('rooms.pic_id', $picId)
                     ->orWhere('events.requester_id', $picId);
-                if ($isPicLab) {
+                if ($isGenericPicLab) {
                     $query->orWhere('rooms.room_type', 'laboratorium')
                           ->orWhere('rooms.room_type', 'lab')
                           ->orWhere('rooms.room_name', 'like', '%lab%')
@@ -193,12 +193,12 @@ class DashboardController extends Controller
         if ($picId !== null) {
             $user = User::find($picId);
             $isSarpras = $user && (str_contains(strtolower($user->username ?? ''), 'sarpras') || str_contains(strtolower($user->fullname ?? ''), 'sarpras'));
-            $isPicLab = $user && (str_contains(strtolower($user->username ?? ''), 'lab') || str_contains(strtolower($user->fullname ?? ''), 'lab'));
+            $isGenericPicLab = $user && ($user->username === 'pic_lab');
             if (!$isSarpras) {
-                $query->where(function ($q) use ($picId, $isPicLab) {
+                $query->where(function ($q) use ($picId, $isGenericPicLab) {
                     $q->where('rooms.pic_id', $picId)
                       ->orWhere('complaints.handler_id', $picId);
-                    if ($isPicLab) {
+                    if ($isGenericPicLab) {
                         $q->orWhere('rooms.room_type', 'laboratorium')
                           ->orWhere('rooms.room_type', 'lab')
                           ->orWhere('rooms.room_name', 'like', '%lab%')

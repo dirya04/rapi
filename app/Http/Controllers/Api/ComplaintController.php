@@ -29,14 +29,13 @@ class ComplaintController extends Controller
         if ($role === 'PIC') {
             $isSarpras = str_contains(strtolower($user->username ?? ''), 'sarpras')
                 || str_contains(strtolower($user->fullname ?? ''), 'sarpras');
-            $isPicLab = str_contains(strtolower($user->username ?? ''), 'lab')
-                || str_contains(strtolower($user->fullname ?? ''), 'lab');
+            $isGenericPicLab = $user->username === 'pic_lab';
 
             if (!$isSarpras) {
-                $query->where(function ($q) use ($user, $isPicLab) {
-                    $q->whereHas('room', function ($sub) use ($user, $isPicLab) {
+                $query->where(function ($q) use ($user, $isGenericPicLab) {
+                    $q->whereHas('room', function ($sub) use ($user, $isGenericPicLab) {
                         $sub->where('pic_id', $user->id);
-                        if ($isPicLab) {
+                        if ($isGenericPicLab) {
                             $sub->orWhere('room_type', 'laboratorium');
                         }
                     })->orWhere('handler_id', $user->id);
