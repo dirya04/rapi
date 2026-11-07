@@ -164,3 +164,4 @@ return new class extends Migration {
         // Reversible jika diperlukan
     }
 };
+
