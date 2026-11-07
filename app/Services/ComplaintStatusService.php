@@ -17,9 +17,18 @@ class ComplaintStatusService
 
             $isSarpras = str_contains(strtolower($handler->username ?? ''), 'sarpras')
                 || str_contains(strtolower($handler->fullname ?? ''), 'sarpras');
+            $isPicLab = str_contains(strtolower($handler->username ?? ''), 'lab')
+                || str_contains(strtolower($handler->fullname ?? ''), 'lab');
+
+            $isLabRoom = in_array(strtolower($room->room_type ?? ''), ['laboratorium', 'lab'], true)
+                || str_contains(strtolower($room->room_name ?? ''), 'lab');
 
             $canHandle = in_array($handler->role?->role_name, ['Admin', 'Waka'], true)
-                || ($handler->role?->role_name === 'PIC' && ((int) $room->pic_id === (int) $handler->id || $isSarpras));
+                || ($handler->role?->role_name === 'PIC' && (
+                    (int) $room->pic_id === (int) $handler->id
+                    || $isSarpras
+                    || ($isPicLab && $isLabRoom)
+                ));
 
             abort_unless($canHandle, 403,
                 'Pengaduan ini bukan tanggung jawab ruang Anda.');

@@ -21,13 +21,13 @@ class ComplaintController extends Controller
         $data = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'description' => ['required', 'string', 'max:2000'],
-            'photo' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],
+            'photo' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ], [
             'photo.required' => 'Pilih foto bukti kerusakan terlebih dahulu.',
             'photo.uploaded' => 'Foto tidak dapat diunggah. Pastikan ukuran file maksimal 10 MB dan pengaturan upload server mengizinkan ukuran tersebut.',
             'photo.max' => 'Ukuran foto maksimal 10 MB.',
             'photo.image' => 'File bukti harus berupa gambar.',
-            'photo.mimes' => 'Format foto harus JPG, JPEG, atau PNG.',
+            'photo.mimes' => 'Format foto harus JPG, JPEG, PNG, atau WEBP.',
         ]);
 
         $room = Room::findOrFail($data['room_id']);
@@ -36,11 +36,12 @@ class ComplaintController extends Controller
         }
 
         $photo = $request->file('photo');
-        $photoPath = $photo->storeAs(
-            'complaints',
-            Str::uuid().'.'.$photo->guessExtension(),
-            'public'
-        );
+        $ext = strtolower($photo->getClientOriginalExtension() ?: ($photo->guessExtension() ?: 'jpg'));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+            $ext = 'jpg';
+        }
+        $filename = Str::uuid() . '.' . $ext;
+        $photoPath = $photo->storeAs('complaints', $filename, 'public');
         abort_unless($photoPath, 500, 'Foto pengaduan gagal disimpan ke penyimpanan publik.');
 
         try {
@@ -59,8 +60,14 @@ class ComplaintController extends Controller
             throw $exception;
         }
 
-        return redirect($this->dashboardPath($request))
-            ->with('success', 'Laporan kerusakan berhasil dikirim.');
+        $redirectPath = match ($request->user()->role?->role_name) {
+            'PIC' => '/pic/dashboard?page=pengaduan',
+            'Guru', 'Organisasi' => '/guru/dashboard?page=pengaduan',
+            default => '/admin/dashboard?page=pengaduan',
+        };
+
+        return redirect($redirectPath)
+            ->with('success', 'Laporan kerusakan fasilitas beserta foto bukti berhasil dikirim.');
     }
 
     // Ubah status perbaikan
@@ -74,8 +81,24 @@ class ComplaintController extends Controller
         $complaint = Complaint::findOrFail($id);
         $statuses->update($complaint, $request->user(), $data['status_repair'], $data['progress_note'] ?? null);
 
-        return redirect($this->dashboardPath($request))
+        $redirectPath = match ($request->user()->role?->role_name) {
+            'PIC' => '/pic/dashboard?page=pengaduan',
+            'Guru', 'Organisasi' => '/guru/dashboard?page=pengaduan',
+            default => '/admin/dashboard?page=pengaduan',
+        };
+
+        return redirect($redirectPath)
             ->with('success', 'Status perbaikan diperbarui.');
+    }
+
+    // Tampilkan / unduh foto pengaduan kerusakan secara aman
+    public function photo(Complaint $complaint)
+    {
+        if (empty($complaint->photo_path) || !Storage::disk('public')->exists($complaint->photo_path)) {
+            abort(404, 'Foto bukti kerusakan tidak ditemukan.');
+        }
+
+        return Storage::disk('public')->response($complaint->photo_path);
     }
 
     public function whatsapp(Complaint $complaint, ComplaintWhatsAppService $whatsapp)

@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use App\Models\Room;
 use App\Services\TodayAgendaService;
 use Carbon\Carbon;
 
 class AuthController extends Controller {
-    // Menampilkan halaman form login
+    // Menampilkan halaman landing page & form login
     public function showLogin(TodayAgendaService $agenda) {
         $now = Carbon::now()->format('H:i:s');
 
@@ -27,7 +29,34 @@ class AuthController extends Controller {
                 return $event;
             });
 
-        return view('welcome', compact('eventsToday'));
+        // Data Ruangan untuk Landing Page
+        $allRooms = Room::query()
+            ->leftJoin('users as room_pic', 'rooms.pic_id', '=', 'room_pic.id')
+            ->where('rooms.is_active', true)
+            ->orderBy('rooms.room_name')
+            ->select('rooms.*', 'room_pic.fullname as pic_name', 'room_pic.phone_number as pic_phone')
+            ->get();
+
+        $roomCount = $allRooms->count();
+        $todayBookedRoomIds = $eventsToday->pluck('room_id')->unique()->all();
+        $emptyRoomsCount = $allRooms->whereNotIn('id', $todayBookedRoomIds)->count();
+        $emptyRooms = $allRooms->whereNotIn('id', $todayBookedRoomIds)->values();
+
+        // Statistik umum
+        $totalEventsCount = DB::table('events')->whereIn('status', ['approved', 'moved'])->count();
+        $totalComplaintsCount = DB::table('complaints')->count();
+        $resolvedComplaintsCount = DB::table('complaints')->where('status_repair', 'Sudah Diperbaiki')->count();
+
+        return view('welcome', compact(
+            'eventsToday',
+            'allRooms',
+            'roomCount',
+            'emptyRoomsCount',
+            'emptyRooms',
+            'totalEventsCount',
+            'totalComplaintsCount',
+            'resolvedComplaintsCount'
+        ));
     }
 
     // Proses autentikasi login & redirect sesuai role

@@ -115,7 +115,22 @@
         .profile-identity small { color: var(--ink-muted); font-size: .72rem; }
 
         .stats { display: flex; gap: 12px; }
-        .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 20px; min-width: 120px; }
+        .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 20px; min-width: 120px; cursor: pointer; transition: transform 0.15s ease, background 0.15s ease; }
+        .stat:hover { transform: translateY(-2px); background: #edf5f0; }
+        .room-availability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+        .room-avail-card { background: #ffffff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; box-shadow: 0 2px 6px rgba(18, 60, 51, 0.04); transition: transform .18s, box-shadow .18s; }
+        .room-avail-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(18, 60, 51, 0.08); }
+        .status-indicator { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; }
+        .status-indicator.vacant { background: var(--green-soft); color: #065f46; }
+        .status-indicator.occupied { background: #fee2e2; color: #991b1b; }
+        .btn-session-filter { background: var(--paper); border: 1px solid var(--line); padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--ink-muted); cursor: pointer; transition: all .15s; white-space: nowrap; }
+        .btn-session-filter:hover { background: #e2e8e5; color: var(--ink); }
+        .btn-session-filter.active { background: var(--board); color: #fff; border-color: var(--board); }
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 14px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+        .data-table th { background: #f4f8f6; color: var(--board); font-weight: 700; padding: 12px 14px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+        .data-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+        .data-table tr:hover { background: #fafcfa; }
         .stat b { font-family: var(--display); font-size: 1.8rem; font-weight: 800; line-height: 1; display: block; }
         .stat span { font-size: .8rem; color: var(--ink-muted); }
 
@@ -298,6 +313,9 @@
         .complaint-head h4 { min-width: 0; overflow-wrap: anywhere; font-family: var(--display); font-size: .98rem; font-weight: 700; }
         .complaint-desc { min-width: 0; font-size: .86rem; color: var(--ink-muted); margin-bottom: 8px; overflow-wrap: anywhere; }
         .complaint-time { font-size: .78rem; color: #889990; }
+        .complaint-photo-box { margin: 10px 0; display: inline-block; position: relative; }
+        .complaint-photo-thumb { max-width: 100%; max-height: 200px; border-radius: 10px; border: 1px solid var(--line); object-fit: cover; display: block; box-shadow: 0 3px 8px rgba(0,0,0,0.08); transition: transform 0.2s ease; }
+        .complaint-photo-thumb:hover { transform: scale(1.02); }
 
         .empty { text-align: center; padding: 36px 16px; color: var(--ink-muted); }
         .empty b { display: block; font-family: var(--display); font-size: 1.1rem; color: var(--ink); margin-bottom: 4px; }
@@ -393,9 +411,10 @@
             </div>
             <div class="top-actions">
                 <div class="stats">
-                    <div class="stat"><b>{{ $roomCount }}</b><span>Ruangan</span></div>
-                    <div class="stat"><b>{{ count($events ?? []) }}</b><span>Agenda</span></div>
-                    <div class="stat"><b>{{ count($complaints ?? []) }}</b><span>Pengaduan</span></div>
+                    <div class="stat" onclick="switchDashboardPage('rooms')" title="Klik untuk lihat daftar ruangan"><b>{{ $roomCount }}</b><span>Ruangan</span></div>
+                    <div class="stat" onclick="switchDashboardPage('ruang-kosong')" title="Klik untuk lihat ruang kosong hari ini"><b style="color: #059669;">{{ $emptyRoomsCount ?? 0 }}</b><span>Ruang Kosong</span></div>
+                    <div class="stat" onclick="switchDashboardPage('agenda')" title="Klik untuk lihat agenda"><b>{{ count($events ?? []) }}</b><span>Agenda</span></div>
+                    <div class="stat" onclick="switchDashboardPage('pengaduan')" title="Klik untuk lihat pengaduan kerusakan"><b>{{ count($complaints ?? []) }}</b><span>Pengaduan</span></div>
                 </div>
                 <x-profile-button />
             </div>
@@ -685,38 +704,248 @@
             </section>
             </div>
 
-            {{-- PAGE 3: STATUS KERUSAKAN --}}
-            <div class="admin-page-view" id="page-kerusakan" data-page="kerusakan">
-                <section class="panel" id="kerusakan">
-                <div class="panel-head">
-                    <h2>Status Laporan Kerusakan</h2>
-                    <p>Pantau tindak lanjut perbaikan dari tim Sarpras.</p>
+            {{-- PAGE 3: RUANG KOSONG --}}
+            <div class="admin-page-view" id="page-ruang-kosong" data-page="ruang-kosong">
+                <section class="panel" id="ruang-kosong">
+                <div class="panel-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2>🟢 Ketersediaan Ruangan (Ruang Kosong)</h2>
+                        <p>Pantau ruangan yang kosong / tersedia hari ini dan siap untuk dipinjam.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; background: var(--green-soft); color: #065f46; font-weight: 700; padding: 5px 14px; border-radius: 999px;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                            {{ $emptyRoomsCount ?? 0 }} Ruang Kosong Hari Ini
+                        </span>
+                    </div>
                 </div>
                 <div class="panel-body">
-                    @forelse($complaints ?? [] as $complaint)
-                        @if($loop->first)<ul class="complaint-list">@endif
-                        <li class="complaint-item">
-                            <div class="complaint-head">
-                                <h4>📍 {{ $complaint->room_name ?? 'Ruangan' }}</h4>
-                                @php $status = $complaint->status_repair; @endphp
-                                @if($status === 'Sudah Diperbaiki')
-                                    <span class="badge badge-success">{{ $status }}</span>
-                                @elseif($status === 'Menunggu Spare Part')
-                                    <span class="badge badge-process">{{ $status }}</span>
-                                @else
-                                    <span class="badge badge-pending">{{ $status }}</span>
-                                @endif
-                            </div>
-                            <div class="complaint-desc">{{ $complaint->description }}</div>
-                            <div class="complaint-time">Dilaporkan: {{ \Carbon\Carbon::parse($complaint->reported_at ?? now())->translatedFormat('d M Y, H:i') }} WIB</div>
-                        </li>
-                        @if($loop->last)</ul>@endif
-                    @empty
-                        <div class="empty">
-                            <b>Tidak ada laporan kerusakan</b>
-                            Belum ada catatan kerusakan yang dilaporkan saat ini.
+                    <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: var(--ink);">
+                            Filter Sesi Jam:
                         </div>
-                    @endforelse
+                        <div style="display: flex; gap: 6px; overflow-x: auto; max-width: 100%; padding-bottom: 4px;">
+                            <button type="button" class="btn-session-filter active" data-sess="all" onclick="filterEmptyRooms('all', this)">Semua Sesi</button>
+                            @for($s = 1; $s <= 11; $s++)
+                                <button type="button" class="btn-session-filter" data-sess="{{ $s }}" onclick="filterEmptyRooms('{{ $s }}', this)">Sesi {{ $s }}</button>
+                            @endfor
+                        </div>
+                    </div>
+
+                    <div class="room-availability-grid">
+                        @foreach($rooms ?? [] as $room)
+                            @php
+                                $roomTodayEvents = ($todayEvents ?? collect())->where('room_id', $room->id);
+                                $isOccupiedToday = $roomTodayEvents->isNotEmpty();
+                                $occupiedSessionsList = $roomTodayEvents->map(fn($e) => substr($e->start_time, 0, 5))->join(',');
+                            @endphp
+                            <div class="room-avail-card" data-room-id="{{ $room->id }}" data-sessions="{{ $occupiedSessionsList }}">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                                    <div>
+                                        <span class="badge" style="font-size: 0.72rem; text-transform: uppercase; background: var(--blue-soft); color: #1a568c;">{{ ucfirst(str_replace('_', ' ', $room->room_type)) }}</span>
+                                        <h3 style="margin: 4px 0 2px; font-size: 1rem; font-weight: 700;">{{ $room->room_name }}</h3>
+                                        <div style="font-size: 0.78rem; color: var(--ink-muted);">📍 {{ $room->location }} • Kapasitas {{ $room->capacity }} org</div>
+                                    </div>
+                                    <span class="status-indicator {{ $isOccupiedToday ? 'occupied' : 'vacant' }}">
+                                        {{ $isOccupiedToday ? 'Digunakan' : 'Kosong' }}
+                                    </span>
+                                </div>
+                                <div class="avail-detail-box" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 0.8rem;">
+                                    @if($isOccupiedToday)
+                                        <div style="color: #991b1b; font-weight: 600; font-size: 0.78rem; margin-bottom: 4px;">
+                                            Agenda Terjadwal:
+                                        </div>
+                                        @foreach($roomTodayEvents as $ev)
+                                            <div style="font-size: 0.75rem; color: var(--ink); background: var(--paper); padding: 4px 8px; border-radius: 6px; margin-bottom: 4px;">
+                                                <b>{{ $ev->event_name }}</b> ({{ $formatSessionTime($ev->start_time, $ev->end_time) }})
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <div style="color: #065f46; font-size: 0.78rem;">
+                                            ✨ Tidak ada agenda hari ini. Ruangan siap dipinjam!
+                                        </div>
+                                    @endif
+                                </div>
+                                <button type="button" class="btn btn-sm" style="margin-top: 10px; width: 100%; font-size: 0.78rem; padding: 7px;" onclick="selectRoomForBooking('{{ $room->id }}')">
+                                    + Pinjam Ruangan Ini
+                                </button>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </section>
+            </div>
+
+            {{-- PAGE 4: PENGADUAN KERUSAKAN --}}
+            <div class="admin-page-view" id="page-pengaduan" data-page="pengaduan">
+                <section class="panel" id="pengaduan">
+                <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2>Status Laporan Kerusakan</h2>
+                        <p>Pantau tindak lanjut perbaikan fasilitas dari tim Sarpras & PIC Lab.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-session-filter active" id="btn-comp-my" onclick="switchComplaintTab('my', this)">
+                            📌 Laporan Saya ({{ count($complaints ?? []) }})
+                        </button>
+                        <button type="button" class="btn-session-filter" id="btn-comp-all" onclick="switchComplaintTab('all', this)">
+                            🏫 Semua Pengaduan Sekolah ({{ count($allComplaints ?? []) }})
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    {{-- 1. Tab Laporan Saya --}}
+                    <div id="complaints-view-my">
+                        @forelse($complaints ?? [] as $complaint)
+                            @if($loop->first)<ul class="complaint-list">@endif
+                            <li class="complaint-item">
+                                <div class="complaint-head">
+                                    <h4>📍 {{ $complaint->room_name ?? 'Ruangan' }}</h4>
+                                    @php $status = $complaint->status_repair; @endphp
+                                    @if($status === 'Sudah Diperbaiki')
+                                        <span class="badge badge-success">{{ $status }}</span>
+                                    @elseif($status === 'Menunggu Spare Part')
+                                        <span class="badge badge-process">{{ $status }}</span>
+                                    @else
+                                        <span class="badge badge-pending">{{ $status }}</span>
+                                    @endif
+                                </div>
+                                <div class="complaint-desc"><strong>Deskripsi Kerusakan:</strong> {{ $complaint->description }}</div>
+
+                                @if(!empty($complaint->photo_path))
+                                    <div class="complaint-photo-box">
+                                        <a href="{{ route('complaints.photo', $complaint->id) }}" target="_blank" rel="noopener" title="Klik untuk membuka foto ukuran penuh">
+                                            <img src="{{ route('complaints.photo', $complaint->id) }}" alt="Foto Kerusakan {{ $complaint->room_name }}" class="complaint-photo-thumb" loading="lazy">
+                                        </a>
+                                        <div style="font-size: 0.74rem; color: #556960; margin-top: 4px;">🔍 Klik foto untuk memperbesar</div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($complaint->progress_note))
+                                    <div class="complaint-desc" style="background: #eef6f2; padding: 8px 12px; border-radius: 8px; border-left: 3px solid #13693e; margin: 8px 0;">
+                                        <strong>Catatan Progres Petugas (PIC/Sarpras):</strong> {{ $complaint->progress_note }}
+                                    </div>
+                                @endif
+
+                                <div class="complaint-time">Dilaporkan: {{ \Carbon\Carbon::parse($complaint->reported_at ?? now())->translatedFormat('d M Y, H:i') }} WIB</div>
+                            </li>
+                            @if($loop->last)</ul>@endif
+                        @empty
+                            <div class="empty">
+                                <b>Tidak ada laporan kerusakan Anda</b>
+                                Belum ada pengaduan kerusakan yang Anda kirimkan. Laporkan fasilitas rusak melalui tab "Ajukan & Lapor".
+                            </div>
+                        @endforelse
+                    </div>
+
+                    {{-- 2. Tab Semua Pengaduan Sekolah --}}
+                    <div id="complaints-view-all" style="display: none;">
+                        @forelse($allComplaints ?? [] as $complaint)
+                            @if($loop->first)<ul class="complaint-list">@endif
+                            <li class="complaint-item">
+                                <div class="complaint-head">
+                                    <h4>📍 {{ $complaint->room_name ?? 'Ruangan' }}</h4>
+                                    @php $status = $complaint->status_repair; @endphp
+                                    @if($status === 'Sudah Diperbaiki')
+                                        <span class="badge badge-success">{{ $status }}</span>
+                                    @elseif($status === 'Menunggu Spare Part')
+                                        <span class="badge badge-process">{{ $status }}</span>
+                                    @else
+                                        <span class="badge badge-pending">{{ $status }}</span>
+                                    @endif
+                                </div>
+                                <div style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 6px;">
+                                    👤 Pelapor: <strong>{{ $complaint->reporter_name ?? 'Warga Sekolah' }}</strong>
+                                </div>
+                                <div class="complaint-desc"><strong>Kerusakan:</strong> {{ $complaint->description }}</div>
+
+                                @if(!empty($complaint->photo_path))
+                                    <div class="complaint-photo-box">
+                                        <a href="{{ route('complaints.photo', $complaint->id) }}" target="_blank" rel="noopener" title="Klik untuk membuka foto ukuran penuh">
+                                            <img src="{{ route('complaints.photo', $complaint->id) }}" alt="Foto Kerusakan {{ $complaint->room_name }}" class="complaint-photo-thumb" loading="lazy">
+                                        </a>
+                                        <div style="font-size: 0.74rem; color: #556960; margin-top: 4px;">🔍 Klik foto untuk memperbesar</div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($complaint->progress_note))
+                                    <div class="complaint-desc" style="background: #eef6f2; padding: 8px 12px; border-radius: 8px; border-left: 3px solid #13693e; margin: 8px 0;">
+                                        <strong>Catatan Progres Petugas (PIC/Sarpras):</strong> {{ $complaint->progress_note }}
+                                    </div>
+                                @endif
+
+                                <div class="complaint-time">Dilaporkan: {{ \Carbon\Carbon::parse($complaint->reported_at ?? now())->translatedFormat('d M Y, H:i') }} WIB</div>
+                            </li>
+                            @if($loop->last)</ul>@endif
+                        @empty
+                            <div class="empty">
+                                <b>Tidak ada laporan kerusakan di sekolah</b>
+                                Seluruh fasilitas sekolah dalam kondisi baik.
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </section>
+            </div>
+
+            {{-- PAGE 5: DAFTAR RUANGAN --}}
+            <div class="admin-page-view" id="page-rooms" data-page="rooms">
+                <section class="panel" id="rooms">
+                <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2>Daftar Ruangan Sekolah</h2>
+                        <p>Daftar seluruh ruangan sekolah, kapasitas, lokasi, dan penanggung jawab (PIC).</p>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">No</th>
+                                    <th>Nama Ruangan</th>
+                                    <th>Tipe Ruang</th>
+                                    <th>Kapasitas</th>
+                                    <th>Lokasi</th>
+                                    <th>Penanggung Jawab (PIC)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($allRooms ?? [] as $r)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td><strong>{{ $r->room_name }}</strong></td>
+                                        <td>
+                                            <span class="badge" style="background: var(--blue-soft); color: #1a568c; text-transform: capitalize;">
+                                                {{ str_replace('_', ' ', $r->room_type) }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $r->capacity }} orang</td>
+                                        <td>{{ $r->location }}</td>
+                                        <td>
+                                            @if($r->pic_name)
+                                                <span>👤 {{ $r->pic_name }}</span>
+                                            @else
+                                                <span style="color: var(--ink-muted);">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($r->is_active)
+                                                <span class="badge badge-success">Aktif</span>
+                                            @else
+                                                <span class="badge" style="background: #f1f5f9; color: #64748b;">Nonaktif</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; padding: 24px;">Belum ada ruangan yang terdaftar.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
             </div>
@@ -855,9 +1084,14 @@
             if (!pageKey) pageKey = 'agenda';
             if (pageKey === 'dashboard') pageKey = 'agenda';
             if (pageKey === 'calendar') pageKey = 'kalender';
+            if (pageKey === 'kerusakan') pageKey = 'pengaduan';
+            if (pageKey === 'ruangan') pageKey = 'rooms';
 
             const pages = document.querySelectorAll('.admin-page-view');
             let targetPage = document.getElementById('page-' + pageKey);
+            if (!targetPage && pageKey === 'pengaduan') {
+                targetPage = document.getElementById('page-kerusakan');
+            }
             if (!targetPage) {
                 pageKey = 'agenda';
                 targetPage = document.getElementById('page-agenda');
@@ -870,7 +1104,8 @@
 
             const navLinks = document.querySelectorAll('.sidebar-main-nav a[data-page]');
             navLinks.forEach(link => {
-                if (link.getAttribute('data-page') === pageKey) {
+                const linkPage = link.getAttribute('data-page');
+                if (linkPage === pageKey || (pageKey === 'pengaduan' && linkPage === 'kerusakan')) {
                     link.classList.add('active');
                 } else {
                     link.classList.remove('active');
@@ -888,6 +1123,54 @@
             if (pageKey === 'kalender') {
                 loadRoleCalendar();
             }
+        }
+
+        function switchComplaintTab(tabKey, btn) {
+            const btnMy = document.getElementById('btn-comp-my');
+            const btnAll = document.getElementById('btn-comp-all');
+            if (btnMy && btnAll) {
+                btnMy.classList.toggle('active', tabKey === 'my');
+                btnAll.classList.toggle('active', tabKey === 'all');
+            }
+            const viewMy = document.getElementById('complaints-view-my');
+            const viewAll = document.getElementById('complaints-view-all');
+            if (viewMy) viewMy.style.display = (tabKey === 'my') ? 'block' : 'none';
+            if (viewAll) viewAll.style.display = (tabKey === 'all') ? 'block' : 'none';
+        }
+
+        function selectRoomForBooking(roomId) {
+            switchDashboardPage('ajukan');
+            const roomSelect = document.getElementById('room_pinjam');
+            if (roomSelect) {
+                roomSelect.value = roomId;
+                const tabPinjam = document.getElementById('tab-pinjam');
+                if (tabPinjam) tabPinjam.click();
+                roomSelect.focus();
+            }
+        }
+
+        function filterEmptyRooms(sess, btn) {
+            document.querySelectorAll('.btn-session-filter').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            const cards = document.querySelectorAll('.room-avail-card');
+            cards.forEach(card => {
+                if (sess === 'all') {
+                    card.style.display = 'flex';
+                    return;
+                }
+                const bookedSessions = card.getAttribute('data-sessions') || '';
+                const sessTimeMap = {
+                    '1': '07:00', '2': '07:45', '3': '08:30', '4': '09:15', '5': '10:15',
+                    '6': '11:00', '7': '11:45', '8': '12:45', '9': '13:30', '10': '14:15', '11': '15:00'
+                };
+                const expectedTime = sessTimeMap[sess];
+                if (expectedTime && bookedSessions.includes(expectedTime)) {
+                    card.style.display = 'none';
+                } else {
+                    card.style.display = 'flex';
+                }
+            });
         }
 
         // Interactive Calendar inside Dashboard

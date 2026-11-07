@@ -10,6 +10,7 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\RoomController as AdminRoomController;
+use App\Models\User;
 
 // --------------------------------------------------------------------------
 // HELPER QUERY DATA
@@ -24,7 +25,14 @@ $getEvents = function (?int $picId = null, ?int $requesterId = null) {
         ->orderBy('events.start_time');
 
     if ($picId !== null) {
-        $query->where('rooms.pic_id', $picId);
+        $user = User::find($picId);
+        $isPicLab = $user && (str_contains(strtolower($user->username ?? ''), 'lab') || str_contains(strtolower($user->fullname ?? ''), 'lab'));
+        $query->where(function ($q) use ($picId, $isPicLab) {
+            $q->where('rooms.pic_id', $picId);
+            if ($isPicLab) {
+                $q->orWhere('rooms.room_type', 'laboratorium');
+            }
+        });
     }
 
     if ($requesterId !== null) {
@@ -40,11 +48,31 @@ $getComplaints = function (?int $picId = null, ?int $reporterId = null) {
         ->join('rooms', 'complaints.room_id', '=', 'rooms.id')
         ->leftJoin('users as pic', 'rooms.pic_id', '=', 'pic.id')
         ->leftJoin('users as reporter', 'complaints.reporter_id', '=', 'reporter.id')
-        ->select('complaints.*', 'rooms.room_name', 'rooms.pic_id', 'pic.fullname as pic_name', 'pic.phone_number as pic_phone', 'reporter.fullname as reporter_name')
+        ->select(
+            'complaints.*',
+            'rooms.room_name',
+            'rooms.room_type',
+            'rooms.pic_id',
+            'pic.fullname as pic_name',
+            'pic.phone_number as pic_phone',
+            'reporter.fullname as reporter_name',
+            'reporter.phone_number as reporter_phone'
+        )
         ->orderByDesc('complaints.reported_at');
 
     if ($picId !== null) {
-        $query->where('rooms.pic_id', $picId);
+        $user = User::find($picId);
+        $isSarpras = $user && (str_contains(strtolower($user->username ?? ''), 'sarpras') || str_contains(strtolower($user->fullname ?? ''), 'sarpras'));
+        $isPicLab = $user && (str_contains(strtolower($user->username ?? ''), 'lab') || str_contains(strtolower($user->fullname ?? ''), 'lab'));
+        if (!$isSarpras) {
+            $query->where(function ($q) use ($picId, $isPicLab) {
+                $q->where('rooms.pic_id', $picId)
+                  ->orWhere('complaints.handler_id', $picId);
+                if ($isPicLab) {
+                    $q->orWhere('rooms.room_type', 'laboratorium');
+                }
+            });
+        }
     }
 
     if ($reporterId !== null) {
@@ -129,13 +157,17 @@ Route::middleware(['auth'])->group(function () use ($getEvents, $getComplaints) 
     Route::get('/complaints/{complaint}/whatsapp', [ComplaintController::class, 'whatsapp'])
         ->middleware('role:Admin,Waka')->name('complaints.whatsapp');
 
+    // Lihat Foto Pengaduan Kerusakan (Aman dengan session login)
+    Route::get('/complaints/{complaint}/photo', [ComplaintController::class, 'photo'])
+        ->name('complaints.photo');
+
     // Lapor Kerusakan Fasilitas (Admin, Guru, Organisasi, PIC)
     Route::post('/complaints', [ComplaintController::class, 'store'])
         ->middleware('role:Admin,Waka,Guru,Organisasi,PIC')->name('complaints.store');
 
     // Update Status Laporan Kerusakan (Khusus PIC / Sarpras / Admin)
     Route::post('/complaints/{id}/status', [ComplaintController::class, 'updateStatus'])
-        ->middleware('role:PIC')->name('complaints.status');
+        ->middleware('role:PIC,Admin,Waka')->name('complaints.status');
 
     // ----------------------------------------------------------------------
     // MANAJEMEN PENGGUNA (KHUSUS ADMIN / WAKA)

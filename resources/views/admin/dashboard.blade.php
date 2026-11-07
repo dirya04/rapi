@@ -114,7 +114,8 @@
         .profile-identity small { color: var(--ink-muted); font-size: .72rem; }
 
         .stats { display: flex; gap: 12px; flex-wrap: wrap; }
-        .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 20px; min-width: 120px; }
+        .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 20px; min-width: 120px; cursor: pointer; transition: transform 0.15s ease, background 0.15s ease; }
+        .stat:hover { transform: translateY(-2px); background: #edf5f0; }
         .stat b { font-family: var(--display); font-size: 1.8rem; font-weight: 800; line-height: 1; display: block; }
         .stat span { font-size: .8rem; color: var(--ink-muted); }
 
@@ -322,6 +323,9 @@
         .complaint-head h3 { min-width: 0; overflow-wrap: anywhere; font-family: var(--display); font-size: 1rem; font-weight: 700; }
         .complaint-desc { min-width: 0; font-size: .86rem; color: var(--ink-muted); overflow-wrap: anywhere; }
         .complaint-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .complaint-photo-box { margin: 10px 0; display: inline-block; position: relative; }
+        .complaint-photo-thumb { max-width: 100%; max-height: 200px; border-radius: 10px; border: 1px solid var(--line); object-fit: cover; display: block; box-shadow: 0 3px 8px rgba(0,0,0,0.08); transition: transform 0.2s ease; }
+        .complaint-photo-thumb:hover { transform: scale(1.02); }
 
         /* Tables & Users */
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 14px; }
@@ -448,11 +452,11 @@
             </div>
             <div class="top-actions">
                 <div class="stats">
-                    <div class="stat"><b>{{ $roomCount ?? count($rooms ?? []) }}</b><span>Ruangan</span></div>
-                    <div class="stat"><b style="color: #059669;">{{ $emptyRoomsCount ?? 0 }}</b><span>Ruang Kosong</span></div>
-                    <div class="stat"><b>{{ isset($events) ? count($events) : 0 }}</b><span>Agenda</span></div>
-                    <div class="stat"><b>{{ isset($complaints) ? count($complaints) : 0 }}</b><span>Pengaduan</span></div>
-                    <div class="stat"><b>{{ isset($users) ? count($users) : 0 }}</b><span>Pengguna</span></div>
+                    <div class="stat" onclick="switchAdminPage('rooms')" title="Klik untuk kelola ruangan"><b>{{ $roomCount ?? count($rooms ?? []) }}</b><span>Ruangan</span></div>
+                    <div class="stat" onclick="switchAdminPage('ruang-kosong')" title="Klik untuk lihat ruang kosong"><b style="color: #059669;">{{ $emptyRoomsCount ?? 0 }}</b><span>Ruang Kosong</span></div>
+                    <div class="stat" onclick="switchAdminPage('agenda')" title="Klik untuk lihat agenda"><b>{{ isset($events) ? count($events) : 0 }}</b><span>Agenda</span></div>
+                    <div class="stat" onclick="switchAdminPage('pengaduan')" title="Klik untuk lihat pengaduan"><b>{{ isset($complaints) ? count($complaints) : 0 }}</b><span>Pengaduan</span></div>
+                    <div class="stat" onclick="switchAdminPage('users')" title="Klik untuk kelola pengguna"><b>{{ isset($users) ? count($users) : 0 }}</b><span>Pengguna</span></div>
                 </div>
                 <x-profile-button />
             </div>
@@ -808,6 +812,21 @@
                                     <span>🕒 Dilaporkan: {{ \Carbon\Carbon::parse($complaint->reported_at)->translatedFormat('d M Y, H:i') }}</span>
                                 </div>
                             </div>
+
+                            @if(!empty($complaint->photo_path))
+                                <div class="complaint-photo-box">
+                                    <a href="{{ route('complaints.photo', $complaint->id) }}" target="_blank" rel="noopener" title="Klik untuk membuka foto ukuran penuh">
+                                        <img src="{{ route('complaints.photo', $complaint->id) }}" alt="Bukti Kerusakan {{ $complaint->room_name }}" class="complaint-photo-thumb" loading="lazy">
+                                    </a>
+                                    <div style="font-size: 0.74rem; color: #556960; margin-top: 4px;">🔍 Klik foto untuk memperbesar</div>
+                                </div>
+                            @endif
+
+                            @if(!empty($complaint->progress_note))
+                                <div class="complaint-desc" style="background: #eef6f2; padding: 8px 12px; border-radius: 8px; border-left: 3px solid #13693e; margin-top: 8px;">
+                                    <strong>Catatan Progres Petugas:</strong> {{ $complaint->progress_note }}
+                                </div>
+                            @endif
 
                             @if($complaint->status_repair !== 'Sudah Diperbaiki' && !empty($complaint->pic_phone))
                                 <div class="complaint-actions">
