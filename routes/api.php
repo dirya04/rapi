@@ -52,6 +52,17 @@ Route::get('/deploy-migrate-{secret}', function (Request $request, string $secre
         $results['optimize_clear'] = $e->getMessage();
     }
 
+    // 5. Informasi Diagnostik Status Deployment
+    $welcomePath = resource_path('views/welcome.blade.php');
+    $results['diagnostics'] = [
+        'base_path'           => base_path(),
+        'welcome_exists'      => file_exists($welcomePath),
+        'welcome_size'        => file_exists($welcomePath) ? filesize($welcomePath) : 0,
+        'welcome_modified_at' => file_exists($welcomePath) ? date('Y-m-d H:i:s', filemtime($welcomePath)) : null,
+        'active_rooms_count'  => DB::table('rooms')->where('is_active', true)->count(),
+        'pic_users_count'     => DB::table('users')->where('role_id', DB::table('roles')->where('role_name', 'PIC')->value('id'))->count(),
+    ];
+
     return response()->json([
         'status'  => 'success',
         'message' => 'Database migration and deployment tasks executed successfully.',

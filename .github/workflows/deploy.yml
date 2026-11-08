@@ -37,19 +37,118 @@ jobs:
           npm ci || npm install
           npm run build
 
-      - name: 🚀 Deploy via FTP
+      - name: 🔍 Detect FTP Root and Deploy Core Files
+        id: ftp_detect
+        run: |
+          python3 - << 'EOF'
+          import ftplib
+          import os
+
+          server = "${{ secrets.FTP_SERVER }}"
+          username = "${{ secrets.FTP_USERNAME }}"
+          password = "${{ secrets.FTP_PASSWORD }}"
+          port_str = "${{ secrets.FTP_PORT }}" or "21"
+          port = int(port_str) if port_str.isdigit() else 21
+
+          print(f"Connecting to FTP server: {server}:{port} as {username}...")
+          ftp = ftplib.FTP()
+          ftp.connect(server, port, timeout=60)
+          ftp.login(username, password)
+
+          pwd = ftp.pwd()
+          print(f"FTP root PWD: {pwd}")
+          items = ftp.nlst()
+          print(f"Root items ({len(items)} found): {items[:15]}")
+
+          explicit_dir = "${{ secrets.FTP_SERVER_DIR }}"
+          if explicit_dir and explicit_dir != "/":
+              target = explicit_dir if explicit_dir.endswith("/") else explicit_dir + "/"
+          elif "public_html" in items:
+              target = "public_html/"
+          else:
+              target = "/"
+
+          print(f"Detected Target Directory: {target}")
+
+          # Set GITHUB_OUTPUT
+          github_output = os.environ.get("GITHUB_OUTPUT")
+          if github_output:
+              with open(github_output, "a") as f:
+                  f.write(f"target_dir={target}\n")
+
+          def ensure_remote_dir(remote_dir):
+              clean = remote_dir.strip("/")
+              if not clean:
+                  return
+              parts = clean.split("/")
+              cur = ""
+              for part in parts:
+                  cur = f"{cur}/{part}" if cur else part
+                  try:
+                      ftp.mkd(cur)
+                  except Exception:
+                      pass
+
+          def upload_file(local_path, rel_target):
+              if not os.path.exists(local_path):
+                  print(f"Skip missing file: {local_path}")
+                  return
+              remote_path = f"{target}{rel_target}".replace("//", "/")
+              remote_dir = os.path.dirname(remote_path)
+              ensure_remote_dir(remote_dir)
+              with open(local_path, "rb") as fp:
+                  ftp.storbinary(f"STOR {remote_path}", fp)
+              print(f"Uploaded: {local_path} -> {remote_path}")
+
+          def upload_folder(local_folder, rel_target_folder):
+              if not os.path.isdir(local_folder):
+                  return
+              for root, _, files in os.walk(local_folder):
+                  for file in files:
+                      local_file = os.path.join(root, file)
+                      rel_file = os.path.relpath(local_file, local_folder)
+                      remote_file = os.path.join(rel_target_folder, rel_file).replace("\\", "/")
+                      upload_file(local_file, remote_file)
+
+          print("Uploading core critical files...")
+          core_files = [
+              ("resources/views/welcome.blade.php", "resources/views/welcome.blade.php"),
+              ("resources/views/auth/login.blade.php", "resources/views/auth/login.blade.php"),
+              ("app/Http/Controllers/AuthController.php", "app/Http/Controllers/AuthController.php"),
+              ("app/Http/Controllers/DashboardController.php", "app/Http/Controllers/DashboardController.php"),
+              ("app/Services/ComplaintStatusService.php", "app/Services/ComplaintStatusService.php"),
+              ("database/seeders/RoomSeeder.php", "database/seeders/RoomSeeder.php"),
+              ("database/seeders/DatabaseSeeder.php", "database/seeders/DatabaseSeeder.php"),
+              ("database/migrations/2026_11_07_000002_create_specific_pics_and_assign_rooms.php", "database/migrations/2026_11_07_000002_create_specific_pics_and_assign_rooms.php"),
+              ("routes/web.php", "routes/web.php"),
+              ("routes/api.php", "routes/api.php"),
+          ]
+
+          for local, remote in core_files:
+              upload_file(local, remote)
+
+          upload_folder("public/build", "public/build")
+
+          ftp.quit()
+          print("Direct core upload finished successfully!")
+          EOF
+
+      - name: 🚀 Deploy via FTP (Full Sync)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT || 21 }}
-          server-dir: ${{ secrets.FTP_SERVER_DIR || '/' }}
-          state-name: .ftp-deploy-sync-state-v2.json
+          server-dir: ${{ steps.ftp_detect.outputs.target_dir }}
+          state-name: .ftp-deploy-sync-state-v3.json
           exclude: |
             .git*
             **/.git*/**
+            node_modules/**
             **/node_modules/**
+            vendor/**
+            **/vendor/**
             tests/**
             .env
             .env.example
@@ -62,4 +161,5 @@ jobs:
           if [ -z "$SECRET" ]; then
             SECRET="rapi_secret_token_12345"
           fi
-          curl -sS -k "https://rapi-drya.web.id/api/deploy-migrate-${SECRET}?seed=1" || echo "Webhook executed."
+          RESPONSE=$(curl -sS -k "https://rapi-drya.web.id/api/deploy-migrate-${SECRET}?seed=1")
+          echo "Webhook Response: $RESPONSE"
