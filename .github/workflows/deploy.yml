@@ -37,15 +37,6 @@ jobs:
           npm ci || npm install
           npm run build
 
-      - name: 📁 Determine Target Directory
-        id: target
-        run: |
-          TARGET="${{ secrets.FTP_SERVER_DIR }}"
-          if [ -z "$TARGET" ] || [ "$TARGET" = "/" ]; then
-            TARGET="public_html/"
-          fi
-          echo "server_dir=$TARGET" >> $GITHUB_OUTPUT
-
       - name: 🚀 Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -53,7 +44,8 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT || 21 }}
-          server-dir: ${{ steps.target.outputs.server_dir }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR || '/' }}
+          state-name: .ftp-deploy-sync-state-v2.json
           exclude: |
             .git*
             **/.git*/**
