@@ -76,8 +76,8 @@ class WhatsAppOtpService
      */
     protected function dispatchWhatsAppMessage(string $formattedPhone, string $message): void
     {
-        $gatewayUrl = config('services.whatsapp.url') ?: env('WA_GATEWAY_URL');
-        $apiKey     = config('services.whatsapp.key') ?: env('WA_API_KEY');
+        $gatewayUrl = trim((string) (config('services.whatsapp.url') ?: env('WA_GATEWAY_URL')));
+        $apiKey     = trim((string) (config('services.whatsapp.key') ?: env('WA_API_KEY')));
 
         if (!empty($gatewayUrl) && !empty($apiKey)) {
             try {

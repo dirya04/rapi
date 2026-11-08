@@ -104,6 +104,7 @@ jobs:
               ("app/Http/Controllers/AuthController.php", "app/Http/Controllers/AuthController.php"),
               ("app/Http/Controllers/DashboardController.php", "app/Http/Controllers/DashboardController.php"),
               ("app/Services/ComplaintStatusService.php", "app/Services/ComplaintStatusService.php"),
+              ("app/Services/WhatsAppOtpService.php", "app/Services/WhatsAppOtpService.php"),
               ("database/seeders/RoomSeeder.php", "database/seeders/RoomSeeder.php"),
               ("database/seeders/DatabaseSeeder.php", "database/seeders/DatabaseSeeder.php"),
               ("database/migrations/2026_11_07_000002_create_specific_pics_and_assign_rooms.php", "database/migrations/2026_11_07_000002_create_specific_pics_and_assign_rooms.php"),
