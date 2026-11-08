@@ -11,8 +11,10 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     steps:
-      - name: 🚚 Get latest code
+      - name: 🚚 Get latest code (Full History)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: ⚙️ Setup PHP
         uses: shivammathur/setup-php@v2
@@ -35,6 +37,15 @@ jobs:
           npm ci || npm install
           npm run build
 
+      - name: 📁 Determine Target Directory
+        id: target
+        run: |
+          TARGET="${{ secrets.FTP_SERVER_DIR }}"
+          if [ -z "$TARGET" ] || [ "$TARGET" = "/" ]; then
+            TARGET="public_html/"
+          fi
+          echo "server_dir=$TARGET" >> $GITHUB_OUTPUT
+
       - name: 🚀 Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -42,7 +53,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT || 21 }}
-          server-dir: ${{ secrets.FTP_SERVER_DIR || '/' }}
+          server-dir: ${{ steps.target.outputs.server_dir }}
           exclude: |
             .git*
             **/.git*/**
@@ -55,5 +66,8 @@ jobs:
 
       - name: 🔄 Trigger Database Migration Webhook
         run: |
-          curl -sS -k "https://rapi-drya.web.id/api/deploy-migrate-${{ secrets.DEPLOY_SECRET }}?seed=1" || echo "Webhook executed."
-
+          SECRET="${{ secrets.DEPLOY_SECRET }}"
+          if [ -z "$SECRET" ]; then
+            SECRET="rapi_secret_token_12345"
+          fi
+          curl -sS -k "https://rapi-drya.web.id/api/deploy-migrate-${SECRET}?seed=1" || echo "Webhook executed."
