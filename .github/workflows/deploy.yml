@@ -37,7 +37,7 @@ jobs:
           npm ci || npm install
           npm run build
 
-      - name: 🔍 Detect FTP Root and Deploy Core Files
+      - name: 🔍 Deploy Core Files Directly via FTP
         id: ftp_detect
         run: |
           python3 - << 'EOF'
@@ -60,21 +60,8 @@ jobs:
           items = ftp.nlst()
           print(f"Root items ({len(items)} found): {items[:15]}")
 
-          explicit_dir = "${{ secrets.FTP_SERVER_DIR }}"
-          if explicit_dir and explicit_dir != "/":
-              target = explicit_dir if explicit_dir.endswith("/") else explicit_dir + "/"
-          elif "public_html" in items:
-              target = "public_html/"
-          else:
-              target = "/"
-
-          print(f"Detected Target Directory: {target}")
-
-          # Set GITHUB_OUTPUT
-          github_output = os.environ.get("GITHUB_OUTPUT")
-          if github_output:
-              with open(github_output, "a") as f:
-                  f.write(f"target_dir={target}\n")
+          # The FTP user root is /home/rapidrya/public_html, so target is "/"
+          target = "/"
 
           def ensure_remote_dir(remote_dir):
               clean = remote_dir.strip("/")
@@ -83,7 +70,7 @@ jobs:
               parts = clean.split("/")
               cur = ""
               for part in parts:
-                  cur = f"{cur}/{part}" if cur else part
+                  cur = f"{cur}/{part}" if cur else f"/{part}"
                   try:
                       ftp.mkd(cur)
                   except Exception:
@@ -93,7 +80,7 @@ jobs:
               if not os.path.exists(local_path):
                   print(f"Skip missing file: {local_path}")
                   return
-              remote_path = f"{target}{rel_target}".replace("//", "/")
+              remote_path = f"/{rel_target.lstrip('/')}"
               remote_dir = os.path.dirname(remote_path)
               ensure_remote_dir(remote_dir)
               with open(local_path, "rb") as fp:
@@ -110,7 +97,7 @@ jobs:
                       remote_file = os.path.join(rel_target_folder, rel_file).replace("\\", "/")
                       upload_file(local_file, remote_file)
 
-          print("Uploading core critical files...")
+          print("Directly deploying core files into website root...")
           core_files = [
               ("resources/views/welcome.blade.php", "resources/views/welcome.blade.php"),
               ("resources/views/auth/login.blade.php", "resources/views/auth/login.blade.php"),
@@ -140,8 +127,8 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT || 21 }}
-          server-dir: ${{ steps.ftp_detect.outputs.target_dir }}
-          state-name: .ftp-deploy-sync-state-v3.json
+          server-dir: /
+          state-name: .ftp-deploy-sync-state-v4.json
           exclude: |
             .git*
             **/.git*/**
@@ -154,6 +141,8 @@ jobs:
             .env.example
             *.md
             phpunit.xml
+            public_html/**
+            **/public_html/**
 
       - name: 🔄 Trigger Database Migration Webhook
         run: |
