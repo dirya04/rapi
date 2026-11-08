@@ -101,9 +101,18 @@
         @media (max-width: 720px) {
             body { padding: 14px 10px; }
             .toolbar { align-items: flex-start; flex-direction: column; gap: 12px; }
-            .day { min-height: 90px; padding: 4px; }
+            .day { min-height: 85px; padding: 4px; }
             .event { padding: 3px 4px; font-size: .65rem; }
             .month-header-display { font-size: 1.05rem; min-width: 140px; }
+        }
+        @media (max-width: 500px) {
+            .day { min-height: 62px; padding: 2px; }
+            .day-number { font-size: 0.76rem; width: 18px; height: 18px; }
+            .weekday { font-size: 0.68rem; padding: 6px 2px; }
+            .event { font-size: 0.58rem; padding: 2px 3px; }
+            .month-stepper button { width: 30px; height: 30px; font-size: 1rem; }
+            .btn-today { padding: 4px 8px; font-size: 0.75rem; }
+            .nav-bar a { padding: 6px 10px; font-size: 0.82rem; }
         }
     </style>
 </head>

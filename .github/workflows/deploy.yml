@@ -101,6 +101,10 @@ jobs:
           core_files = [
               ("resources/views/welcome.blade.php", "resources/views/welcome.blade.php"),
               ("resources/views/auth/login.blade.php", "resources/views/auth/login.blade.php"),
+              ("resources/views/admin/dashboard.blade.php", "resources/views/admin/dashboard.blade.php"),
+              ("resources/views/pic/dashboard.blade.php", "resources/views/pic/dashboard.blade.php"),
+              ("resources/views/guru/dashboard.blade.php", "resources/views/guru/dashboard.blade.php"),
+              ("resources/views/calendar.blade.php", "resources/views/calendar.blade.php"),
               ("app/Http/Controllers/AuthController.php", "app/Http/Controllers/AuthController.php"),
               ("app/Http/Controllers/DashboardController.php", "app/Http/Controllers/DashboardController.php"),
               ("app/Services/ComplaintStatusService.php", "app/Services/ComplaintStatusService.php"),

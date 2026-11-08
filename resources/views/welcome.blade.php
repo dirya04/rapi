@@ -252,13 +252,169 @@
             box-shadow: 0 6px 18px rgba(18, 60, 51, 0.3);
             background: linear-gradient(135deg, var(--board-2) 0%, #236556 100%);
         }
+        /* Mobile Toggle Button (Animated Hamburger) */
         .mobile-toggle {
             display: none;
-            background: none;
-            border: none;
-            font-size: 1.6rem;
-            color: var(--board);
+            width: 40px;
+            height: 40px;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 9px;
             cursor: pointer;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(18, 60, 51, 0.06);
+            flex-shrink: 0;
+        }
+        .mobile-toggle:hover {
+            background: #eef5f1;
+            border-color: var(--board);
+        }
+        .mobile-toggle .bar {
+            width: 20px;
+            height: 2px;
+            background: var(--board);
+            border-radius: 2px;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+        }
+        .mobile-toggle.active .bar-1 {
+            transform: translateY(7px) rotate(45deg);
+        }
+        .mobile-toggle.active .bar-2 {
+            opacity: 0;
+        }
+        .mobile-toggle.active .bar-3 {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        /* Mobile Nav Drawer */
+        .mobile-nav-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2000;
+            display: flex;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        .mobile-nav-drawer.open {
+            visibility: visible;
+            opacity: 1;
+        }
+        .mobile-nav-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(18, 60, 51, 0.55);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .mobile-nav-content {
+            position: relative;
+            width: min(340px, 86%);
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transform: translateX(-100%);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mobile-nav-drawer.open .mobile-nav-content {
+            transform: translateX(0);
+        }
+        .mobile-nav-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--line);
+            background: var(--paper);
+        }
+        .mobile-nav-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            color: var(--ink-muted);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .mobile-nav-close:hover {
+            color: var(--board);
+            border-color: var(--board);
+        }
+        .mobile-nav-links {
+            list-style: none;
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+        .mobile-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--ink);
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .mobile-nav-link:hover, .mobile-nav-link:active {
+            background: var(--green-soft);
+            color: var(--board);
+            transform: translateX(4px);
+        }
+        .mobile-nav-footer {
+            padding: 18px 20px;
+            border-top: 1px solid var(--line);
+            background: var(--paper);
+        }
+        .btn-mobile-login {
+            width: 100%;
+            background: linear-gradient(135deg, var(--board) 0%, var(--board-2) 100%);
+            color: #ffffff !important;
+            padding: 12px 18px;
+            border-radius: var(--radius-pill);
+            font-weight: 700;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            box-shadow: 0 4px 14px rgba(18, 60, 51, 0.25);
+        }
+
+        .mobile-table-hint {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--board);
+            margin-bottom: 10px;
+            padding: 6px 12px;
+            background: var(--green-soft);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(18, 60, 51, 0.12);
         }
 
         /* =================== HERO SECTION =================== */
@@ -1129,14 +1285,32 @@
             font-size: 0.78rem;
         }
 
-        /* =================== RESPONSIVE =================== */
+        /* =================== RESPONSIVE (LAPTOP, TABLET & MOBILE) =================== */
+        @media (max-width: 1200px) {
+            .hero-title {
+                font-size: clamp(2.3rem, 4vw, 2.85rem);
+            }
+            .hero-container {
+                gap: 36px;
+            }
+            .section-container {
+                padding: 64px 20px;
+            }
+        }
+
         @media (max-width: 1024px) {
             .hero-container {
                 grid-template-columns: 1fr;
-                gap: 40px;
+                gap: 36px;
+            }
+            .hero-right {
+                max-width: 540px;
+                margin: 0 auto;
+                width: 100%;
             }
             .strip-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 14px;
             }
             .features-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -1149,21 +1323,51 @@
             }
             .footer-inner {
                 grid-template-columns: 1fr 1fr;
+                gap: 32px;
             }
         }
 
-        @media (max-width: 768px) {
-            .hero-title {
-                font-size: 2.2rem;
-            }
+        @media (max-width: 900px) {
             .nav-menu {
                 display: none;
             }
             .mobile-toggle {
-                display: block;
+                display: flex;
+            }
+            .brand-text h1 {
+                font-size: 1.2rem;
+            }
+            .brand-icon {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .site-header {
+                box-shadow: 0 2px 10px rgba(18, 60, 51, 0.06);
+            }
+            .navbar {
+                padding: 12px 16px;
+            }
+            .hero-section {
+                padding: 36px 16px 54px;
+            }
+            .hero-title {
+                font-size: clamp(1.85rem, 5.5vw, 2.3rem);
+                letter-spacing: -0.5px;
+            }
+            .hero-desc {
+                font-size: 0.95rem;
+                line-height: 1.55;
+            }
+            .feature-strip-section {
+                margin-top: 20px;
+                padding: 0 16px;
             }
             .strip-grid {
                 grid-template-columns: 1fr;
+                gap: 12px;
             }
             .features-grid {
                 grid-template-columns: 1fr;
@@ -1173,13 +1377,133 @@
             }
             .roles-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 14px;
+            }
+            .section-container {
+                padding: 48px 16px;
+            }
+            .section-title {
+                font-size: clamp(1.6rem, 5vw, 2.1rem);
+            }
+            .section-desc {
+                font-size: 0.88rem;
+            }
+            .sleek-auth-card {
+                padding: 26px 20px;
+                border-radius: var(--radius-md);
+            }
+            .auth-input {
+                font-size: 16px; /* Mencegah auto-zoom di iOS Safari saat tap input */
+                min-height: 48px;
+            }
+            .btn-auth-submit {
+                min-height: 48px;
+                font-size: 1rem;
+            }
+            .rooms-grid {
+                grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr));
+                gap: 16px;
+            }
+            .agenda-table {
+                min-width: 620px;
+            }
+            .mobile-table-hint {
+                display: inline-flex;
             }
             .footer-inner {
                 grid-template-columns: 1fr;
+                gap: 28px;
+            }
+            .top-bar-inner {
+                flex-direction: column;
+                gap: 6px;
+                padding: 8px 16px;
+                text-align: center;
             }
             .top-bar-left, .top-bar-right {
                 width: 100%;
                 justify-content: center;
+                flex-wrap: wrap;
+                font-size: 0.72rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 10px 12px;
+            }
+            .brand-text h1 {
+                font-size: 1.05rem;
+            }
+            .brand-text p {
+                display: none;
+            }
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+            }
+            .btn-nav-login {
+                padding: 7px 12px;
+                font-size: 0.78rem;
+            }
+            .btn-nav-login span.btn-label-long {
+                display: none;
+            }
+            .hero-section {
+                padding: 24px 12px 40px;
+            }
+            .hero-tag {
+                font-size: 0.74rem;
+                padding: 4px 10px;
+            }
+            .hero-title {
+                font-size: 1.65rem;
+                line-height: 1.25;
+            }
+            .hero-stats-row {
+                gap: 14px;
+            }
+            .hero-stat-item b {
+                font-size: 1.45rem;
+            }
+            .hero-stat-item span {
+                font-size: 0.7rem;
+            }
+            .pill-card {
+                padding: 12px 14px;
+                gap: 12px;
+            }
+            .pill-icon-wrap {
+                width: 38px;
+                height: 38px;
+            }
+            .pill-content h4 {
+                font-size: 0.92rem;
+            }
+            .pill-content p {
+                font-size: 0.76rem;
+            }
+            .sleek-auth-card {
+                padding: 20px 16px;
+            }
+            .auth-card-head h3 {
+                font-size: 1.25rem;
+            }
+            .roles-grid {
+                grid-template-columns: 1fr;
+            }
+            .top-bar-right {
+                display: none;
+            }
+            .session-filter-wrapper {
+                padding: 8px 10px;
+            }
+            .session-btn-group {
+                gap: 4px;
+            }
+            .btn-session-tab {
+                padding: 5px 10px;
+                font-size: 0.74rem;
             }
         }
     </style>
@@ -1240,17 +1564,61 @@
                     @endphp
                     <a href="{{ $dashboardUrl }}" class="btn-nav-login">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        Dashboard ({{ auth()->user()->fullname ?? 'Pengguna' }})
+                        <span><span class="btn-label-long">Dashboard</span> ({{ auth()->user()->username ?? 'Pengguna' }})</span>
                     </a>
                 @else
                     <a href="#login-box" class="btn-nav-login">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                        Masuk Sistem
+                        <span>Masuk<span class="btn-label-long"> Sistem</span></span>
                     </a>
                 @endauth
+
+                <button type="button" class="mobile-toggle" id="btnMobileToggle" aria-label="Buka Menu Navigasi" onclick="toggleMobileNav()">
+                    <span class="bar bar-1"></span>
+                    <span class="bar bar-2"></span>
+                    <span class="bar bar-3"></span>
+                </button>
             </div>
         </nav>
     </header>
+
+    {{-- =================== MOBILE NAV DRAWER =================== --}}
+    <div class="mobile-nav-drawer" id="mobileNavDrawer" aria-hidden="true">
+        <div class="mobile-nav-backdrop" onclick="closeMobileNav()"></div>
+        <div class="mobile-nav-content">
+            <div class="mobile-nav-header">
+                <div class="brand-text">
+                    <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--board); margin: 0;">RAPI-Sekolah</h2>
+                    <p style="font-size: 0.72rem; color: var(--ink-muted); margin: 0;">Menu Navigasi Mobile</p>
+                </div>
+                <button type="button" class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Tutup Menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <ul class="mobile-nav-links">
+                <li><a href="#beranda" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Beranda</a></li>
+                <li><a href="#ruang-kosong" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pantau Ruang Kosong</a></li>
+                <li><a href="#daftar-ruangan" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg> Katalog 22 Ruangan</a></li>
+                <li><a href="#agenda-hari-ini" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Agenda Hari Ini</a></li>
+                <li><a href="#fitur" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Fitur Sistem</a></li>
+                <li><a href="#alur" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> Alur Peminjaman</a></li>
+                <li><a href="{{ route('calendar.index') }}" class="mobile-nav-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg> Kalender Sekolah</a></li>
+            </ul>
+            <div class="mobile-nav-footer">
+                @auth
+                    <a href="{{ $dashboardUrl }}" class="btn-mobile-login">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        Ke Dashboard ({{ auth()->user()->username ?? 'Pengguna' }})
+                    </a>
+                @else
+                    <a href="#login-box" class="btn-mobile-login" onclick="closeMobileNav()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        Masuk ke Akun Sistem
+                    </a>
+                @endauth
+            </div>
+        </div>
+    </div>
 
     {{-- =================== HERO SECTION (Sesuai Referensi Gambar) =================== --}}
     <section class="hero-section" id="beranda">
@@ -1550,6 +1918,11 @@
             <p class="section-desc">Berikut daftar kegiatan belajar mengajar, ujian praktek, atau kegiatan ekstrakurikuler yang telah disetujui untuk hari ini.</p>
         </div>
 
+        <div class="mobile-table-hint">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span>Geser (swipe) tabel ke samping untuk melihat detail jadwal lengkap &rarr;</span>
+        </div>
+
         <div class="agenda-table-wrapper">
             <table class="agenda-table">
                 <thead>
@@ -1815,6 +2188,42 @@
 
     {{-- =================== JAVASCRIPT =================== --}}
     <script>
+        // Mobile Navigation Drawer Toggle
+        function toggleMobileNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const toggle = document.getElementById('btnMobileToggle');
+            if (!drawer) return;
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                closeMobileNav();
+            } else {
+                drawer.classList.add('open');
+                drawer.setAttribute('aria-hidden', 'false');
+                if (toggle) toggle.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeMobileNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const toggle = document.getElementById('btnMobileToggle');
+            if (drawer) {
+                drawer.classList.remove('open');
+                drawer.setAttribute('aria-hidden', 'true');
+            }
+            if (toggle) {
+                toggle.classList.remove('active');
+            }
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeMobileNav();
+        });
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 900) closeMobileNav();
+        });
+
         // Toggle Password Visibility
         function togglePasswordVisibility() {
             const pwdInput = document.getElementById('password');

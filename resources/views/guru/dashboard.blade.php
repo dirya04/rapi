@@ -332,15 +332,31 @@
         @media (max-width: 1000px) {
             body { grid-template-columns: 1fr; }
             .sidebar { position: sticky; top: 0; z-index: 50; height: auto; min-height: 0; overflow: visible; flex-direction: column; align-items: stretch; padding: 14px 18px; gap: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
-            .sidebar-main-nav { display: flex !important; flex-direction: row; overflow-x: auto; white-space: nowrap; gap: 6px; padding: 4px 0 6px; scrollbar-width: none; -ms-overflow-style: none; }
+            .sidebar-main-nav { display: flex !important; flex-direction: row; overflow-x: auto; white-space: nowrap; gap: 6px; padding: 4px 0 6px; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch; }
             .sidebar-main-nav::-webkit-scrollbar { display: none; }
             .sidebar-main-nav a { padding: 8px 12px; font-size: 0.82rem; background: rgba(255,255,255,0.08); border-radius: 8px; flex-shrink: 0; }
             .sidebar-main-nav a:hover { background: rgba(255,255,255,0.18); }
             .sidebar-actions { display: none; }
-            main { padding: 24px 18px 48px; }
+            main { padding: 20px 16px 48px; }
+            .top-actions { flex-wrap: wrap; gap: 8px; }
         }
-        @media (max-width: 1000px) { .top-actions { flex-wrap: wrap; } }
-        @media (max-width: 520px) { .row { grid-template-columns: 1fr; } .stats { width: 100%; } .stat { flex: 1; } .top-actions { width: 100%; justify-content: space-between; } .profile-identity { display: none; } }
+        @media (max-width: 640px) {
+            main { padding: 14px 12px 48px; }
+            .row { grid-template-columns: 1fr; }
+            .stats { width: 100%; flex-direction: column; gap: 8px; }
+            .stat { width: 100%; }
+            .top-actions { width: 100%; justify-content: space-between; }
+            .profile-identity { display: none; }
+            dialog { width: 94% !important; max-width: 94% !important; padding: 18px 14px !important; max-height: 90vh !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+            .dialog-head h3 { font-size: 1.12rem; }
+            .cal-day { min-height: 65px; padding: 4px; }
+            .cal-day-number { font-size: 0.78rem; width: 20px; height: 20px; }
+            .cal-weekday { font-size: 0.68rem; padding: 6px 2px; }
+            .cal-month-header { font-size: 0.95rem; min-width: 120px; }
+            .cal-month-stepper button { width: 28px; height: 28px; font-size: 0.95rem; }
+            .cal-btn-today { padding: 4px 8px; font-size: 0.75rem; }
+            .table-responsive { -webkit-overflow-scrolling: touch; }
+        }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
         /* Multi-Page Dashboard Views */
         .admin-page-view {
