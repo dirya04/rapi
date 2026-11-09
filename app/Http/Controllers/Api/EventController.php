@@ -37,18 +37,41 @@ class EventController extends Controller
 
     public function store(Request $request, EventBookingService $bookings)
     {
+        $roomIds = $request->input('room_ids');
+        if (!is_array($roomIds) && $request->filled('room_id')) {
+            $roomIds = [$request->input('room_id')];
+        }
+        if (is_array($roomIds)) {
+            $roomIds = array_values(array_filter($roomIds, fn($val) => !empty($val) && is_numeric($val)));
+            $request->merge(['room_ids' => $roomIds]);
+            if (!empty($roomIds) && !$request->filled('room_id')) {
+                $request->merge(['room_id' => $roomIds[0]]);
+            }
+        }
+
         $data = $request->validate([
-            'room_id' => ['required', 'integer', 'exists:rooms,id'],
+            'room_id'    => ['required', 'integer', 'exists:rooms,id'],
+            'room_ids'   => ['nullable', 'array', 'min:1', 'max:3'],
+            'room_ids.*' => ['integer', 'distinct', 'exists:rooms,id'],
             'event_name' => ['required', 'string', 'max:255'],
-            'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
-            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date'],
+            'date'       => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'end_date'   => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date'],
             'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'end_time'   => ['required', 'date_format:H:i', 'after:start_time'],
+        ], [
+            'room_ids.max'        => 'Maksimal peminjaman ruangan sekaligus adalah 3 ruangan.',
+            'room_ids.*.distinct' => 'Ruangan yang dipilih untuk ujian harus berbeda.',
         ]);
 
         $event = $bookings->store($request->user(), $data);
+        $count = $event->booked_room_count ?? count($data['room_ids'] ?? [1]);
 
-        return response()->json(['message' => 'Pengajuan agenda diterima.', 'data' => $event], 201);
+        return response()->json([
+            'message' => $count > 1
+                ? "Pengajuan agenda ujian untuk {$count} ruangan sekaligus diterima."
+                : 'Pengajuan agenda diterima.',
+            'data'    => $event,
+        ], 201);
     }
 
     public function move(Request $request, Event $event, EventBookingService $bookings)

@@ -429,7 +429,12 @@
                         <div class="agenda-card">
                             <div class="agenda-card-head">
                                 <span class="room-tag">🏛️ {{ $event->room_name }}</span>
-                                <span class="agenda-status {{ $event->status }}">{{ ucfirst($event->status) }}</span>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    @if(!empty($event->booking_group) && str_starts_with($event->booking_group, 'EXAM-'))
+                                        <span style="font-size: 0.68rem; background: #e0e7ff; color: #3730a3; padding: 2px 7px; border-radius: 4px; font-weight: 700;">📝 Sesi Ujian</span>
+                                    @endif
+                                    <span class="agenda-status {{ $event->status }}">{{ ucfirst($event->status) }}</span>
+                                </div>
                             </div>
                             <h3>{{ $event->event_name }}</h3>
                             <div class="meta">
@@ -466,7 +471,12 @@
                                 <div class="meta">
                                     <span>📍 {{ $event->room_name }}</span>
                                     <span>🕒 {{ $formatSessionTime($event->start_time, $event->end_time) }}</span>
+                                    <div style="display: flex; gap: 4px; align-items: center;">
+                                    @if(!empty($event->booking_group) && str_starts_with($event->booking_group, 'EXAM-'))
+                                        <span style="font-size: 0.68rem; background: #e0e7ff; color: #3730a3; padding: 2px 7px; border-radius: 4px; font-weight: 700;">📝 Sesi Ujian</span>
+                                    @endif
                                     <span class="agenda-status {{ $event->status }}">{{ ucfirst($event->status) }}</span>
+                                </div>
                                 </div>
                                 @if(!empty($event->move_reason))
                                     <div class="note"><strong>Catatan Waka:</strong> {{ $event->move_reason }}</div>
@@ -506,12 +516,67 @@
                             <label for="event_name">Nama agenda</label>
                             <input type="text" id="event_name" name="event_name" required placeholder="Contoh: Rapat Koordinasi PIC / Persiapan Lab">
                         </div>
-                        <div class="field">
-                            <label for="room_pinjam">Ruangan</label>
-                            <select id="room_pinjam" name="room_id" required>
-                                <option value="" disabled selected>Pilih ruangan</option>
-                                <x-room-options :rooms="$bookingRooms ?? collect()" :selected-room-id="old('room_id')" />
-                            </select>
+                        @php
+                            $oldRoomIds = old('room_ids', []);
+                            $hasSlot2 = !empty($oldRoomIds[1]);
+                            $hasSlot3 = !empty($oldRoomIds[2]);
+                        @endphp
+                        <div class="field" id="exam-rooms-card" style="background: #fbfdfc; padding: 14px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+                                <label style="margin-bottom: 0; font-weight: 800; color: var(--board); display: flex; align-items: center; gap: 6px;">
+                                    <span>🏛️ Pilihan Ruangan Ujian / Agenda</span>
+                                </label>
+                                <button type="button" id="btn-add-exam-room" onclick="addExamRoom()" style="font-size: 0.76rem; background: var(--green-soft); color: var(--board); border: 1px solid rgba(18,60,51,0.2); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-weight: 700; display: {{ $hasSlot3 ? 'none' : 'inline-flex' }}; align-items: center; gap: 4px; transition: all 0.15s;">
+                                    <span>➕ Tambah Ruang Ujian (Maks. 3 Ruang)</span>
+                                </button>
+                            </div>
+                            
+                            <p style="font-size: 0.76rem; color: var(--ink-muted); margin: 0 0 10px 0; line-height: 1.4;">
+                                💡 <em>Khusus ujian sekolah / asesmen:</em> Anda dapat memilih <strong>hingga 3 ruangan berbeda sekaligus</strong>. Seluruh ruangan terpilih akan langsung dipinjam pada <strong>sesi waktu & tanggal yang sama</strong>.
+                            </p>
+
+                            {{-- Ruangan 1 (Utama - Wajib) --}}
+                            <div class="exam-room-item" style="margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--board);">Ruangan 1 (Utama) <span style="color: #dc2626;">*</span></span>
+                                </div>
+                                <select id="room_pinjam" name="room_ids[]" required onchange="validateExamRooms()">
+                                    <option value="" disabled {{ empty($oldRoomIds[0]) && !old('room_id') ? 'selected' : '' }}>Pilih ruangan 1</option>
+                                    <x-room-options :rooms="$bookingRooms ?? collect()" :selected-room-id="$oldRoomIds[0] ?? old('room_id')" />
+                                </select>
+                            </div>
+
+                            {{-- Ruangan 2 (Opsional untuk Ujian) --}}
+                            <div class="exam-room-item" id="slot-room-2" style="display: {{ $hasSlot2 ? 'block' : 'none' }}; margin-bottom: 10px; padding-top: 8px; border-top: 1px dashed var(--line);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--board);">Ruangan 2 (Ujian)</span>
+                                    <button type="button" onclick="removeExamRoom(2)" style="background: none; border: none; color: #dc2626; font-size: 0.75rem; cursor: pointer; font-weight: 700;">✕ Hapus</button>
+                                </div>
+                                <select id="room_pinjam_2" name="room_ids[]" onchange="validateExamRooms()" {{ $hasSlot2 ? '' : 'disabled' }}>
+                                    <option value="" selected>-- Pilih Ruangan Ke-2 --</option>
+                                    <x-room-options :rooms="$bookingRooms ?? collect()" :selected-room-id="$oldRoomIds[1] ?? null" />
+                                </select>
+                            </div>
+
+                            {{-- Ruangan 3 (Opsional untuk Ujian) --}}
+                            <div class="exam-room-item" id="slot-room-3" style="display: {{ $hasSlot3 ? 'block' : 'none' }}; margin-bottom: 6px; padding-top: 8px; border-top: 1px dashed var(--line);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--board);">Ruangan 3 (Ujian)</span>
+                                    <button type="button" onclick="removeExamRoom(3)" style="background: none; border: none; color: #dc2626; font-size: 0.75rem; cursor: pointer; font-weight: 700;">✕ Hapus</button>
+                                </div>
+                                <select id="room_pinjam_3" name="room_ids[]" onchange="validateExamRooms()" {{ $hasSlot3 ? '' : 'disabled' }}>
+                                    <option value="" selected>-- Pilih Ruangan Ke-3 --</option>
+                                    <x-room-options :rooms="$bookingRooms ?? collect()" :selected-room-id="$oldRoomIds[2] ?? null" />
+                                </select>
+                            </div>
+
+                            {{-- Peringatan Duplikasi Ruangan --}}
+                            <div id="exam-room-warning" style="display: none; margin-top: 8px; padding: 7px 10px; background: #fee2e2; border-left: 3px solid #dc2626; color: #991b1b; font-size: 0.76rem; border-radius: 5px; font-weight: 700;">
+                                ⚠️ Ruangan ujian tidak boleh sama! Harap pilih ruangan yang berbeda untuk setiap slot.
+                            </div>
+                            <div id="exam-room-info" style="display: none; margin-top: 8px; font-size: 0.76rem; color: var(--board); font-weight: 700;">
+                                ✨ <span id="exam-room-count-text">1</span> ruangan terpilih akan dipinjam serentak pada sesi yang sama.
+                            </div>
                         </div>
                         <div class="row">
                             <div class="field" style="margin-bottom: 0;">
@@ -1103,6 +1168,82 @@
                 const tabPinjam = document.getElementById('tab-pinjam');
                 if (tabPinjam) tabPinjam.click();
                 roomSelect.focus();
+                validateExamRooms();
+            }
+        }
+
+        // Multi-Room / Exam Booking Controls (Max 3 Rooms with same session)
+        function addExamRoom() {
+            const slot2 = document.getElementById('slot-room-2');
+            const slot3 = document.getElementById('slot-room-3');
+            const select2 = document.getElementById('room_pinjam_2');
+            const select3 = document.getElementById('room_pinjam_3');
+            const btnAdd = document.getElementById('btn-add-exam-room');
+
+            if (slot2 && slot2.style.display === 'none') {
+                slot2.style.display = 'block';
+                if (select2) {
+                    select2.disabled = false;
+                    select2.focus();
+                }
+            } else if (slot3 && slot3.style.display === 'none') {
+                slot3.style.display = 'block';
+                if (select3) {
+                    select3.disabled = false;
+                    select3.focus();
+                }
+                if (btnAdd) btnAdd.style.display = 'none';
+            }
+            validateExamRooms();
+        }
+
+        function removeExamRoom(slotNum) {
+            const slot = document.getElementById(`slot-room-${slotNum}`);
+            const select = document.getElementById(`room_pinjam_${slotNum}`);
+            const btnAdd = document.getElementById('btn-add-exam-room');
+
+            if (slot) slot.style.display = 'none';
+            if (select) {
+                select.value = '';
+                select.disabled = true;
+            }
+            if (btnAdd) btnAdd.style.display = 'inline-flex';
+            validateExamRooms();
+        }
+
+        function validateExamRooms() {
+            const select1 = document.getElementById('room_pinjam');
+            const select2 = document.getElementById('room_pinjam_2');
+            const select3 = document.getElementById('room_pinjam_3');
+            const selects = [select1, select2, select3].filter(el => el && !el.disabled && el.value);
+
+            const values = selects.map(el => el.value);
+            const hasDuplicate = values.length !== new Set(values).size;
+            const warnEl = document.getElementById('exam-room-warning');
+            const infoEl = document.getElementById('exam-room-info');
+            const countEl = document.getElementById('exam-room-count-text');
+            const submitBtn = document.querySelector('#panel-pinjam button[type="submit"]');
+
+            if (warnEl) {
+                warnEl.style.display = hasDuplicate ? 'block' : 'none';
+            }
+            if (infoEl && countEl) {
+                if (values.length > 1) {
+                    infoEl.style.display = 'block';
+                    countEl.textContent = values.length;
+                } else {
+                    infoEl.style.display = 'none';
+                }
+            }
+            if (submitBtn) {
+                submitBtn.disabled = hasDuplicate;
+                if (hasDuplicate) {
+                    submitBtn.style.opacity = '0.5';
+                    submitBtn.style.cursor = 'not-allowed';
+                } else {
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                }
             }
         }
 
@@ -1269,9 +1410,11 @@
             const hash = window.location.hash.replace('#', '');
 
             let defaultPage = 'agenda';
-            @if($errors->hasAny(['event_name', 'room_id', 'date', 'end_date', 'start_time', 'end_time', 'notes', 'complaint_desc', 'photo']))
+            @if($errors->hasAny(['event_name', 'room_id', 'room_ids', 'date', 'end_date', 'start_time', 'end_time', 'notes', 'complaint_desc', 'photo']))
                 defaultPage = 'ajukan';
             @endif
+
+            validateExamRooms();
 
             const targetPage = pageFromQuery || hash || defaultPage;
             switchDashboardPage(targetPage, false);

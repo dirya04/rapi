@@ -15,8 +15,32 @@ class EventBookingService
     public function store(User $requester, array $data): Event
     {
         return DB::transaction(function () use ($requester, $data) {
-            $room = Room::whereKey($data['room_id'])->lockForUpdate()->firstOrFail();
-            abort_unless($room->is_active, 422, 'Ruangan sedang tidak aktif.');
+            $roomIds = !empty($data['room_ids']) && is_array($data['room_ids'])
+                ? array_values(array_unique(array_filter(array_map('intval', $data['room_ids']))))
+                : (isset($data['room_id']) ? [(int) $data['room_id']] : []);
+
+            if (empty($roomIds)) {
+                throw ValidationException::withMessages([
+                    'room_ids' => ['Pilih setidaknya satu ruangan.'],
+                ]);
+            }
+
+            if (count($roomIds) > 3) {
+                throw ValidationException::withMessages([
+                    'room_ids' => ['Maksimal peminjaman ruangan sekaligus adalah 3 ruangan.'],
+                ]);
+            }
+
+            $rooms = Room::whereIn('id', $roomIds)->lockForUpdate()->get();
+            if ($rooms->count() !== count($roomIds)) {
+                throw ValidationException::withMessages([
+                    'room_ids' => ['Salah satu ruangan yang dipilih tidak ditemukan.'],
+                ]);
+            }
+
+            foreach ($rooms as $room) {
+                abort_unless($room->is_active, 422, "Ruangan '{$room->room_name}' sedang tidak aktif.");
+            }
 
             $startDate = Carbon::parse($data['date'])->startOfDay();
             $endDate = !empty($data['end_date'])
@@ -38,55 +62,73 @@ class EventBookingService
             $startTime = substr($data['start_time'], 0, 5);
             $endTime = substr($data['end_time'], 0, 5);
 
-            // Periksa seluruh hari dalam rentang tanggal
+            // Periksa seluruh ruangan dan hari dalam rentang tanggal
             $cursor = $startDate->copy();
             while ($cursor->lte($endDate)) {
                 $dateStr = $cursor->toDateString();
-                $this->assertRoomBookingDay($room, $dateStr, 'date');
+                foreach ($rooms as $room) {
+                    $this->assertRoomBookingDay($room, $dateStr, 'date');
 
-                $conflict = Event::where('room_id', $room->id)
-                    ->whereDate('date', $dateStr)
-                    ->whereIn('status', ['pending', 'approved', 'moved'])
-                    ->where('start_time', '<', $endTime)
-                    ->where('end_time', '>', $startTime)
-                    ->exists();
+                    $conflict = Event::where('room_id', $room->id)
+                        ->whereDate('date', $dateStr)
+                        ->whereIn('status', ['pending', 'approved', 'moved'])
+                        ->where('start_time', '<', $endTime)
+                        ->where('end_time', '>', $startTime)
+                        ->exists();
 
-                if ($conflict) {
-                    $msg = $startDate->eq($endDate)
-                        ? 'Sorry, this room and time slot are already booked or conflict with another agenda.'
-                        : 'Sorry, this room and time slot are already booked or conflict with another agenda on ' . $dateStr . '.';
-                    throw ValidationException::withMessages([
-                        'time' => [$msg],
-                    ]);
+                    if ($conflict) {
+                        $msg = count($rooms) > 1
+                            ? "Ruangan '{$room->room_name}' sudah terisi atau bertabrakan dengan agenda lain pada sesi waktu tersebut."
+                            : ($startDate->eq($endDate)
+                                ? 'Sorry, this room and time slot are already booked or conflict with another agenda.'
+                                : 'Sorry, this room and time slot are already booked or conflict with another agenda on ' . $dateStr . '.');
+                        throw ValidationException::withMessages([
+                            'time' => [$msg],
+                        ]);
+                    }
                 }
 
                 $cursor->addDay();
             }
 
-            $bookingGroup = $startDate->ne($endDate) ? 'GRP-' . uniqid() : null;
+            $isMultiRoom = count($rooms) > 1;
+            $isMultiDay = $startDate->ne($endDate);
+            $bookingGroup = ($isMultiRoom || $isMultiDay)
+                ? ($isMultiRoom ? 'EXAM-' : 'GRP-') . uniqid()
+                : null;
+
             $firstEvent = null;
+            $createdEvents = [];
 
-            $cursor = $startDate->copy();
-            while ($cursor->lte($endDate)) {
-                $dateStr = $cursor->toDateString();
-                $event = Event::create([
-                    ...$data,
-                    'date'          => $dateStr,
-                    'end_date'      => $endDate->toDateString(),
-                    'booking_group' => $bookingGroup,
-                    'start_time'    => $startTime,
-                    'end_time'      => $endTime,
-                    'requester_id'  => $requester->id,
-                    'pic_id'        => $requester->id,
-                    'status'        => 'pending',
-                ]);
+            // Buat event untuk setiap ruangan (sesi & tanggal sama)
+            foreach ($rooms as $room) {
+                $cursor = $startDate->copy();
+                while ($cursor->lte($endDate)) {
+                    $dateStr = $cursor->toDateString();
+                    $event = Event::create([
+                        'event_name'    => $data['event_name'],
+                        'room_id'       => $room->id,
+                        'date'          => $dateStr,
+                        'end_date'      => $endDate->toDateString(),
+                        'booking_group' => $bookingGroup,
+                        'start_time'    => $startTime,
+                        'end_time'      => $endTime,
+                        'requester_id'  => $requester->id,
+                        'pic_id'        => $requester->id,
+                        'status'        => 'pending',
+                    ]);
 
-                if ($firstEvent === null) {
-                    $firstEvent = $event;
+                    if ($firstEvent === null) {
+                        $firstEvent = $event;
+                    }
+                    $createdEvents[] = $event;
+
+                    $cursor->addDay();
                 }
-
-                $cursor->addDay();
             }
+
+            $firstEvent->booked_room_count = count($rooms);
+            $firstEvent->booked_room_names = $rooms->pluck('room_name')->all();
 
             return $firstEvent;
         });
