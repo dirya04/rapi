@@ -81,14 +81,24 @@ class WhatsAppOtpService
 
         if (!empty($gatewayUrl) && !empty($apiKey)) {
             try {
-                $response = Http::timeout(10)
-                    ->withHeaders(['Authorization' => $apiKey])
+                // Gunakan asForm agar kompatibel penuh dengan endpoint form-data Fonnte
+                $response = Http::asForm()
+                    ->timeout(15)
+                    ->withHeaders([
+                        'Authorization' => $apiKey,
+                    ])
                     ->post($gatewayUrl, [
                         'target'  => $formattedPhone,
                         'message' => $message,
                     ]);
 
-                Log::info("WhatsApp Gateway [{$gatewayUrl}] status {$response->status()}: " . $response->body());
+                $resBody = $response->json();
+                if ($response->successful() && is_array($resBody) && ($resBody['status'] ?? true) !== false) {
+                    Log::info("WhatsApp Gateway [{$gatewayUrl}] status {$response->status()}: " . $response->body());
+                } else {
+                    $reason = $resBody['reason'] ?? $resBody['detail'] ?? $response->body();
+                    Log::warning("WhatsApp Gateway [{$gatewayUrl}] pengiriman ke [{$formattedPhone}] dilaporkan Fonnte gagal: {$reason}");
+                }
             } catch (\Throwable $e) {
                 Log::warning('Gagal memanggil WhatsApp Gateway API: ' . $e->getMessage());
             }

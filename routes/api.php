@@ -52,7 +52,40 @@ Route::get('/deploy-migrate-{secret}', function (Request $request, string $secre
         $results['optimize_clear'] = $e->getMessage();
     }
 
-    // 5. Informasi Diagnostik Status Deployment
+    // 5. Pastikan Konfigurasi WhatsApp Fonnte di .env Hosting sinkron
+    $envPath = base_path('.env');
+    $waSynced = false;
+    if (file_exists($envPath)) {
+        $envContent = file_get_contents($envPath);
+        $needsUpdate = false;
+        if (!str_contains($envContent, 'WA_API_KEY') || preg_match('/WA_API_KEY=\s*$/m', $envContent)) {
+            if (str_contains($envContent, 'WA_API_KEY=')) {
+                $envContent = preg_replace('/WA_API_KEY=.*$/m', 'WA_API_KEY=6ZfddccrApxG6MT9pQtz', $envContent);
+            } else {
+                $envContent .= "\nWA_API_KEY=6ZfddccrApxG6MT9pQtz\n";
+            }
+            $needsUpdate = true;
+        }
+        if (!str_contains($envContent, 'WA_GATEWAY_URL')) {
+            $envContent .= "\nWA_GATEWAY_URL=https://api.fonnte.com/send\n";
+            $needsUpdate = true;
+        }
+        if ($needsUpdate) {
+            file_put_contents($envPath, $envContent);
+            Artisan::call('optimize:clear');
+            $waSynced = true;
+        }
+    }
+
+    // 6. Update Nomor WhatsApp Pengguna jika diberikan via parameter aman
+    if ($request->filled('set_phone_user') && $request->filled('set_phone_number')) {
+        $targetUser = $request->input('set_phone_user');
+        $targetPhone = $request->input('set_phone_number');
+        $updatedRows = DB::table('users')->where('username', $targetUser)->update(['phone_number' => $targetPhone]);
+        $results['phone_update'] = "User {$targetUser} phone updated to {$targetPhone} ({$updatedRows} rows affected).";
+    }
+
+    // 7. Informasi Diagnostik Status Deployment
     $welcomePath = resource_path('views/welcome.blade.php');
     $results['diagnostics'] = [
         'base_path'           => base_path(),
@@ -61,6 +94,8 @@ Route::get('/deploy-migrate-{secret}', function (Request $request, string $secre
         'welcome_modified_at' => file_exists($welcomePath) ? date('Y-m-d H:i:s', filemtime($welcomePath)) : null,
         'active_rooms_count'  => DB::table('rooms')->where('is_active', true)->count(),
         'pic_users_count'     => DB::table('users')->where('role_id', DB::table('roles')->where('role_name', 'PIC')->value('id'))->count(),
+        'has_wa_key'          => !empty(config('services.whatsapp.key') ?: env('WA_API_KEY')),
+        'wa_synced'           => $waSynced,
     ];
 
     return response()->json([
