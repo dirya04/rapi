@@ -428,14 +428,25 @@
         .cal-btn-today:hover { background: var(--board); color: #fff; }
         .cal-weekdays, .cal-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
         .cal-weekday { padding: 10px 6px; text-align: center; font-size: .8rem; font-weight: 700; background: #eef5f1; color: var(--board); text-transform: uppercase; letter-spacing: 0.05em; }
+        .cal-weekday.sunday { color: #dc2626; background: #fee2e2; }
+        .cal-weekday.saturday { color: #2563eb; background: #eff6ff; }
         .cal-day { min-height: 115px; padding: 8px; border-top: 1px solid #e4ebe7; border-right: 1px solid #e4ebe7; background: #fff; position: relative; transition: background 0.15s; }
         .cal-day:nth-child(7n) { border-right: 0; }
         .cal-day:hover { background: #fafcfa; }
         .cal-day-number { font-family: var(--display); font-size: .92rem; font-weight: 800; color: #374741; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 6px; }
-        .cal-day.outside { background: #fbfdfc; }
+        .cal-day.outside { background: #fbfdfc; opacity: 0.65; }
         .cal-day.outside .cal-day-number { color: #adbdb5; font-weight: 500; }
         .cal-day.today { background: #f0f8f3; }
         .cal-day.today .cal-day-number { background: var(--board); color: #fff; }
+        .cal-day.is-sunday .cal-day-number { color: #dc2626; font-weight: 800; }
+        .cal-day.is-saturday .cal-day-number { color: #2563eb; font-weight: 700; }
+        .cal-day.is-holiday { background: #fff8f8; border-color: #fecaca; }
+        .cal-day.is-holiday .cal-day-number { color: #dc2626; font-weight: 900; background: #fee2e2; }
+        .cal-day.is-cuti { background: #fffdf5; }
+        .cal-day.is-cuti .cal-day-number { color: #b45309; background: #fef3c7; }
+        .cal-holiday-badge { display: flex; align-items: flex-start; gap: 4px; margin-top: 4px; padding: 3px 5px; border-radius: 5px; background: #fee2e2; border-left: 3px solid #dc2626; color: #991b1b; font-size: 0.68rem; font-weight: 700; line-height: 1.25; }
+        .cal-holiday-badge.cuti { background: #fef3c7; border-left-color: #f59e0b; color: #92400e; }
+        .cal-legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 18px; background: #fbfdfc; border-top: 1px solid var(--line); font-size: 0.78rem; color: var(--ink-muted); }
         .cal-event-item { display: block; margin-top: 5px; padding: 4px 6px; border-radius: 6px; background: #e6f4ec; color: #114e35; font-size: .72rem; line-height: 1.3; border-left: 3px solid #1f8a5f; overflow-wrap: anywhere; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
         .cal-event-item strong { display: block; font-weight: 700; font-size: .72rem; }
         .cal-time { display: block; font-weight: 600; color: #0d3e2a; font-size: .68rem; margin-bottom: 1px; }
@@ -1061,10 +1072,16 @@
                         <div class="cal-card" style="border: 0; box-shadow: none; border-radius: 0;">
                             <div class="cal-weekdays" aria-hidden="true">
                                 <div class="cal-weekday">Sen</div><div class="cal-weekday">Sel</div><div class="cal-weekday">Rab</div>
-                                <div class="cal-weekday">Kam</div><div class="cal-weekday">Jum</div><div class="cal-weekday">Sab</div><div class="cal-weekday">Min</div>
+                                <div class="cal-weekday">Kam</div><div class="cal-weekday">Jum</div><div class="cal-weekday saturday">Sab</div><div class="cal-weekday sunday">Min</div>
                             </div>
                             <div class="cal-days" id="admin-calendar-days" aria-live="polite"></div>
-                            <p class="cal-message" id="admin-calendar-message" role="status">Memuat agenda...</p>
+                            <div class="cal-legend">
+                                <span><span style="color:#dc2626;">●</span> <strong>Merah:</strong> Libur Nasional / Minggu</span>
+                                <span><span style="color:#f59e0b;">●</span> <strong>Kuning:</strong> Cuti Bersama</span>
+                                <span><span style="color:#10b981;">●</span> <strong>Hijau:</strong> Agenda Disetujui</span>
+                                <span><span style="color:var(--board);">●</span> <strong>Bingkai:</strong> Hari Ini</span>
+                            </div>
+                            <p class="cal-message" id="admin-calendar-message" role="status">Memuat agenda & kalender nasional...</p>
                         </div>
                     </div>
                 </section>
@@ -1492,16 +1509,19 @@
                 if (!res.ok) throw new Error('Gagal memuat agenda');
                 const json = await res.json();
                 const events = json.data || [];
-                renderDashboardCalendar(events, start, end);
-                msgEl.textContent = events.length 
-                    ? `${events.length} agenda disetujui pada periode ini.` 
-                    : 'Tidak ada agenda yang disetujui pada periode ini.';
+                const holidays = json.holidays || [];
+                renderDashboardCalendar(events, holidays, start, end);
+                let info = `${events.length} agenda peminjaman ruangan disetujui`;
+                if (holidays.length) {
+                    info += ` · ${holidays.length} hari libur nasional / cuti bersama`;
+                }
+                msgEl.textContent = info + ' pada bulan ini.';
             } catch (err) {
                 msgEl.textContent = 'Gagal memuat agenda kalender.';
             }
         }
 
-        function renderDashboardCalendar(events, start, end) {
+        function renderDashboardCalendar(events, holidays, start, end) {
             const daysEl = document.getElementById('admin-calendar-days');
             daysEl.replaceChildren();
 
@@ -1515,16 +1535,41 @@
                 eventsByDate.get(d).push(e);
             });
 
+            const holidaysByDate = new Map();
+            (holidays || []).forEach(h => {
+                const d = String(h.date).slice(0, 10);
+                holidaysByDate.set(d, h);
+            });
+
             const cur = new Date(start);
             while (cur <= end) {
                 const dStr = formatDate(cur);
+                const dayOfWeek = cur.getDay(); // 0 is Sun, 6 is Sat
                 const cell = document.createElement('div');
                 cell.className = 'cal-day' + (cur.getMonth() !== calDisplayedMonth.getMonth() ? ' outside' : '') + (dStr === todayStr ? ' today' : '');
+
+                if (dayOfWeek === 0) cell.classList.add('is-sunday');
+                if (dayOfWeek === 6) cell.classList.add('is-saturday');
+
+                const holiday = holidaysByDate.get(dStr);
+                if (holiday) {
+                    cell.classList.add('is-holiday');
+                    if (holiday.is_cuti_bersama) cell.classList.add('is-cuti');
+                }
 
                 const num = document.createElement('div');
                 num.className = 'cal-day-number';
                 num.textContent = cur.getDate();
                 cell.appendChild(num);
+
+                // Tampilkan badge libur nasional
+                if (holiday) {
+                    const hBadge = document.createElement('div');
+                    hBadge.className = 'cal-holiday-badge' + (holiday.is_cuti_bersama ? ' cuti' : '');
+                    hBadge.innerHTML = `<span>${holiday.is_cuti_bersama ? '🟡' : '🔴'}</span> <span>${holiday.name}</span>`;
+                    hBadge.title = holiday.name;
+                    cell.appendChild(hBadge);
+                }
 
                 const dayEvents = eventsByDate.get(dStr) || [];
                 dayEvents.forEach(ev => {

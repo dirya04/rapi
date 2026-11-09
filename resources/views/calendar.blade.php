@@ -76,6 +76,8 @@
             padding: 12px 6px; text-align: center; font-size: .82rem; font-weight: 700;
             background: #eef5f1; color: var(--board); text-transform: uppercase; letter-spacing: 0.05em;
         }
+        .weekday.sunday { color: #dc2626; background: #fee2e2; }
+        .weekday.saturday { color: #2563eb; background: #eff6ff; }
         .day {
             min-height: 125px; padding: 8px; border-top: 1px solid #e4ebe7; border-right: 1px solid #e4ebe7;
             background: #fff; position: relative; transition: background 0.15s;
@@ -86,16 +88,61 @@
             font-family: var(--display); font-size: .95rem; font-weight: 800; color: #374741;
             width: 26px; height: 26px; display: grid; place-items: center; border-radius: 6px;
         }
-        .day.outside { background: #fbfdfc; }
+        .day.outside { background: #fbfdfc; opacity: 0.65; }
         .day.outside .day-number { color: #adbdb5; font-weight: 500; }
         .day.today { background: #f0f8f3; }
         .day.today .day-number { background: var(--board); color: #fff; }
+        .day.is-sunday .day-number { color: #dc2626; font-weight: 800; }
+        .day.is-saturday .day-number { color: #2563eb; font-weight: 700; }
+        .day.is-holiday {
+            background: #fff8f8;
+            border-color: #fecaca;
+        }
+        .day.is-holiday .day-number {
+            color: #dc2626;
+            font-weight: 900;
+            background: #fee2e2;
+        }
+        .day.is-cuti {
+            background: #fffdf5;
+        }
+        .day.is-cuti .day-number {
+            color: #b45309;
+            background: #fef3c7;
+        }
+        .holiday-badge {
+            display: flex;
+            align-items: flex-start;
+            gap: 4px;
+            margin-top: 5px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            background: #fee2e2;
+            border-left: 3px solid #dc2626;
+            color: #991b1b;
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 1.25;
+            box-shadow: 0 1px 2px rgba(220, 38, 38, 0.08);
+        }
+        .holiday-badge.cuti {
+            background: #fef3c7;
+            border-left-color: #f59e0b;
+            color: #92400e;
+        }
         .event {
             display: block; margin-top: 6px; padding: 5px 7px; border-radius: 6px;
             background: #e6f4ec; color: #114e35; font-size: .74rem; line-height: 1.35;
             border-left: 3px solid #1f8a5f; overflow-wrap: anywhere; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
         .event-time { display: block; font-weight: 700; color: #0d3e2a; font-size: .7rem; }
+        .calendar-legend {
+            display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+            padding: 14px 24px; background: #fbfdfc; border-top: 1px solid var(--line);
+            font-size: 0.8rem; color: var(--ink-muted);
+        }
+        .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
         .message { padding: 14px 24px; color: var(--ink-muted); font-size: 0.86rem; border-top: 1px solid var(--line); }
         .message.error { color: #a12622; background: #fff5f4; }
         @media (max-width: 720px) {
@@ -153,11 +200,19 @@
 
         <div class="weekdays" aria-hidden="true">
             <div class="weekday">Sen</div><div class="weekday">Sel</div><div class="weekday">Rab</div>
-            <div class="weekday">Kam</div><div class="weekday">Jum</div><div class="weekday">Sab</div><div class="weekday">Min</div>
+            <div class="weekday">Kam</div><div class="weekday">Jum</div><div class="weekday saturday">Sab</div><div class="weekday sunday">Min</div>
         </div>
 
         <div class="days" id="calendar-days" aria-live="polite"></div>
-        <p class="message" id="calendar-message" role="status">Memuat agenda...</p>
+
+        <div class="calendar-legend">
+            <span class="legend-item"><span class="legend-dot" style="background: #dc2626;"></span><strong>Merah:</strong> Hari Libur Nasional / Minggu</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #f59e0b;"></span><strong>Kuning:</strong> Cuti Bersama</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #10b981;"></span><strong>Hijau:</strong> Agenda Ruangan Disetujui</span>
+            <span class="legend-item"><span class="legend-dot" style="background: var(--board);"></span><strong>Bingkai:</strong> Hari Ini</span>
+        </div>
+
+        <p class="message" id="calendar-message" role="status">Memuat agenda & kalender nasional...</p>
     </section>
 
     <script>
@@ -185,7 +240,7 @@
             return sessionsMap[s] ? `Sesi ${sessionsMap[s]} (${s})` : s;
         }
 
-        function renderMonth(events) {
+        function renderMonth(events, holidays = []) {
             title.textContent = monthFormatter.format(displayedMonth);
             calendarDays.replaceChildren();
 
@@ -195,28 +250,54 @@
             gridStart.setDate(firstDay.getDate() - mondayOffset);
             const lastDay = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 0);
             const cellCount = Math.ceil((mondayOffset + lastDay.getDate()) / 7) * 7;
+            
             const eventsByDate = new Map();
-
             events.forEach((event) => {
                 const date = String(event.date).slice(0, 10);
                 if (!eventsByDate.has(date)) eventsByDate.set(date, []);
                 eventsByDate.get(date).push(event);
             });
 
+            const holidaysByDate = new Map();
+            holidays.forEach((h) => {
+                const date = String(h.date).slice(0, 10);
+                holidaysByDate.set(date, h);
+            });
+
             for (let index = 0; index < cellCount; index++) {
                 const date = new Date(gridStart);
                 date.setDate(gridStart.getDate() + index);
                 const dateKey = formatDate(date);
+                const dayOfWeek = date.getDay(); // 0 is Sunday, 6 is Saturday
                 const cell = document.createElement('div');
                 cell.className = 'day';
+
                 if (date.getMonth() !== displayedMonth.getMonth()) cell.classList.add('outside');
                 if (dateKey === formatDate(today)) cell.classList.add('today');
+                if (dayOfWeek === 0) cell.classList.add('is-sunday');
+                if (dayOfWeek === 6) cell.classList.add('is-saturday');
+
+                const holiday = holidaysByDate.get(dateKey);
+                if (holiday) {
+                    cell.classList.add('is-holiday');
+                    if (holiday.is_cuti_bersama) cell.classList.add('is-cuti');
+                }
 
                 const number = document.createElement('div');
                 number.className = 'day-number';
                 number.textContent = String(date.getDate());
                 cell.append(number);
 
+                // Tampilkan badge Hari Libur Nasional / Cuti Bersama
+                if (holiday) {
+                    const hBadge = document.createElement('div');
+                    hBadge.className = 'holiday-badge' + (holiday.is_cuti_bersama ? ' cuti' : '');
+                    hBadge.innerHTML = `<span style="font-size:0.75rem;">${holiday.is_cuti_bersama ? '🟡' : '🔴'}</span> <span>${holiday.name}</span>`;
+                    hBadge.title = holiday.name;
+                    cell.append(hBadge);
+                }
+
+                // Tampilkan agenda peminjaman ruangan
                 (eventsByDate.get(dateKey) || []).forEach((event) => {
                     const item = document.createElement('div');
                     item.className = 'event';
@@ -228,6 +309,7 @@
                     item.append(time, name);
                     cell.append(item);
                 });
+
                 calendarDays.append(cell);
             }
         }
@@ -243,22 +325,28 @@
 
             title.textContent = monthFormatter.format(displayedMonth);
             message.classList.remove('error');
-            message.textContent = 'Memuat agenda...';
+            message.textContent = 'Memuat kalender nasional & agenda...';
             try {
                 const response = await fetch(`/api/calendar/events?from=${formatDate(start)}&to=${formatDate(end)}`, {
                     headers: { Accept: 'application/json' },
                 });
-                if (!response.ok) throw new Error('Agenda gagal dimuat.');
+                if (!response.ok) throw new Error('Agenda kalender gagal dimuat.');
                 const payload = await response.json();
                 if (currentRequest !== requestId) return;
                 const events = payload.data || [];
-                renderMonth(events);
-                message.textContent = events.length ? `${events.length} agenda disetujui pada periode ini.` : 'Tidak ada agenda yang disetujui pada periode ini.';
+                const holidays = payload.holidays || [];
+                renderMonth(events, holidays);
+                
+                let infoStr = `${events.length} agenda peminjaman ruangan disetujui`;
+                if (holidays.length) {
+                    infoStr += ` · ${holidays.length} hari libur nasional / cuti bersama`;
+                }
+                message.textContent = infoStr + ' pada bulan ini.';
             } catch (error) {
                 if (currentRequest !== requestId) return;
                 calendarDays.replaceChildren();
                 message.classList.add('error');
-                message.textContent = error.message || 'Terjadi kesalahan saat memuat agenda.';
+                message.textContent = error.message || 'Terjadi kesalahan saat memuat kalender.';
             }
         }
 

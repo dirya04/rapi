@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Services\EventBookingService;
+use App\Services\NationalHolidayService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class EventController extends Controller
 {
-    public function calendar(Request $request)
+    public function calendar(Request $request, NationalHolidayService $holidayService)
     {
         $data = $request->validate([
             'from' => ['required', 'date_format:Y-m-d'],
@@ -26,7 +27,12 @@ class EventController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        return response()->json(['data' => $events]);
+        $holidays = $holidayService->getHolidays($data['from'], $data['to']);
+
+        return response()->json([
+            'data'     => $events,
+            'holidays' => $holidays,
+        ]);
     }
 
     public function store(Request $request, EventBookingService $bookings)
