@@ -580,6 +580,394 @@
             filter: blur(40px);
             pointer-events: none;
         }
+        /* Hero Card Dual Tabs (Jadwal Siswa vs Login Petugas) */
+        .hero-card-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 4px;
+            border-radius: var(--radius-pill);
+            gap: 4px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            position: relative;
+            z-index: 2;
+        }
+        .hero-card-tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--chalk-muted);
+            padding: 9px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: all 0.2s ease;
+        }
+        .hero-card-tab-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .hero-card-tab-btn.active {
+            background: linear-gradient(135deg, var(--yellow) 0%, #e0a600 100%);
+            color: var(--ink);
+            box-shadow: 0 4px 12px rgba(246, 184, 0, 0.35);
+        }
+        .hero-card-tab-btn.active .live-pulse-badge {
+            background: #123c33;
+            color: #ffffff;
+        }
+        .live-pulse-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(16, 185, 129, 0.25);
+            color: #34d399;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-tab-pane {
+            display: none;
+            animation: fadeInHeroTab 0.2s ease-out;
+        }
+        .hero-tab-pane.active {
+            display: block;
+        }
+        @keyframes fadeInHeroTab {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Schedule Mini Feed in Hero Card */
+        .schedule-pane-header {
+            margin-bottom: 14px;
+        }
+        .live-summary-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .live-stat-badge {
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .live-stat-badge.stat-green {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .live-stat-badge.stat-blue {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .stat-num {
+            font-family: var(--font-display);
+            font-size: 1.45rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #ffffff;
+        }
+        .stat-lbl {
+            font-size: 0.72rem;
+            color: var(--chalk-muted);
+            margin-top: 3px;
+            font-weight: 600;
+        }
+        .search-mini-wrap {
+            position: relative;
+        }
+        .search-mini-wrap input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-pill);
+            padding: 9px 14px 9px 36px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .search-mini-wrap input:focus {
+            outline: none;
+            border-color: var(--yellow);
+            background: rgba(255, 255, 255, 0.14);
+        }
+        .search-mini-wrap input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .search-mini-wrap .mini-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--chalk-muted);
+            pointer-events: none;
+        }
+
+        .mini-schedule-list {
+            max-height: 290px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            scrollbar-width: thin;
+        }
+        .mini-schedule-item {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .mini-schedule-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(246, 184, 0, 0.35);
+        }
+        .mini-item-left {
+            flex: 1;
+            min-width: 0;
+        }
+        .mini-room-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .mini-room-title strong {
+            font-size: 0.92rem;
+            color: #ffffff;
+        }
+        .mini-pic-badge {
+            font-size: 0.68rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--chalk-muted);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+        .agenda-snippet {
+            font-size: 0.74rem;
+            color: #93c5fd;
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mini-empty-desc {
+            font-size: 0.74rem;
+            color: #6ee7b7;
+            margin-top: 3px;
+        }
+        .badge-mini-booked {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            white-space: nowrap;
+        }
+        .badge-mini-empty {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            white-space: nowrap;
+        }
+        .btn-view-full-schedule {
+            margin-top: 14px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff !important;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .btn-view-full-schedule:hover {
+            background: rgba(246, 184, 0, 0.2);
+            border-color: var(--yellow);
+            color: var(--yellow) !important;
+        }
+
+        /* Student Search Hero in Left Column */
+        .student-search-hero {
+            background: #ffffff;
+            border: 2px solid var(--board-2);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            box-shadow: 0 8px 24px rgba(18, 60, 51, 0.08);
+            position: relative;
+        }
+        .student-search-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--board);
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .badge-student {
+            background: var(--yellow);
+            color: var(--ink);
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .student-search-bar {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .student-search-bar .search-icon {
+            position: absolute;
+            left: 14px;
+            color: var(--board);
+            pointer-events: none;
+        }
+        .student-search-bar input {
+            width: 100%;
+            background: var(--paper);
+            border: 1.5px solid var(--line);
+            border-radius: var(--radius-pill);
+            padding: 11px 40px 11px 44px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--ink);
+            font-family: inherit;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        .student-search-bar input:focus {
+            outline: none;
+            background: #ffffff;
+            border-color: var(--board);
+            box-shadow: 0 0 0 3px rgba(18, 60, 51, 0.15);
+        }
+        .btn-search-clear {
+            position: absolute;
+            right: 12px;
+            background: var(--line);
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--ink-muted);
+            font-size: 0.72rem;
+            cursor: pointer;
+        }
+        .student-live-results {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: #ffffff;
+            padding: 4px;
+        }
+        .live-result-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            font-size: 0.85rem;
+        }
+        .live-result-item:hover {
+            background: var(--green-soft);
+        }
+        .student-quick-tags {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .quick-tags-title {
+            font-size: 0.74rem;
+            color: var(--ink-muted);
+            font-weight: 600;
+        }
+        .quick-tag-chip {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-pill);
+            padding: 4px 10px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--board);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .quick-tag-chip:hover {
+            background: #e6ede8;
+            border-color: var(--board);
+        }
+        .quick-tag-chip.active {
+            background: var(--board);
+            color: #ffffff;
+            border-color: var(--board);
+        }
+        .quick-tag-chip.chip-agenda {
+            background: var(--yellow-soft);
+            border-color: rgba(246, 184, 0, 0.4);
+            color: var(--yellow-hover);
+        }
+        .btn-nav-schedule {
+            background: var(--yellow-soft);
+            color: var(--yellow-hover) !important;
+            border: 1px solid rgba(246, 184, 0, 0.4);
+            padding: 8px 16px;
+            border-radius: var(--radius-pill);
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .btn-nav-schedule:hover {
+            background: var(--yellow);
+            color: var(--ink) !important;
+        }
+
         .auth-card-head {
             margin-bottom: 24px;
             position: relative;
@@ -1548,15 +1936,19 @@
 
             <ul class="nav-menu">
                 <li><a href="#beranda" class="nav-link">Beranda</a></li>
+                <li><a href="#agenda-hari-ini" class="nav-link" style="color: var(--board); font-weight: 700;">📅 Agenda Hari Ini</a></li>
                 <li><a href="#ruang-kosong" class="nav-link">Ruang Kosong</a></li>
                 <li><a href="#daftar-ruangan" class="nav-link">Katalog Ruang</a></li>
-                <li><a href="#agenda-hari-ini" class="nav-link">Agenda Hari Ini</a></li>
                 <li><a href="#fitur" class="nav-link">Fitur Sistem</a></li>
                 <li><a href="#alur" class="nav-link">Alur Pinjam</a></li>
                 <li><a href="{{ route('calendar.index') }}" class="nav-link">Kalender</a></li>
             </ul>
 
             <div class="nav-actions">
+                <a href="#jadwal-siswa" class="btn-nav-schedule" onclick="focusStudentSearch(event)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span>Cari Jadwal</span>
+                </a>
                 @auth
                     @php
                         $userRole = auth()->user()->role->role_name ?? 'User';
@@ -1567,7 +1959,7 @@
                         <span><span class="btn-label-long">Dashboard</span> ({{ auth()->user()->username ?? 'Pengguna' }})</span>
                     </a>
                 @else
-                    <a href="#login-box" class="btn-nav-login">
+                    <a href="#login-box" class="btn-nav-login" onclick="switchHeroTab('login')">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         <span>Masuk<span class="btn-label-long"> Sistem</span></span>
                     </a>
@@ -1596,10 +1988,10 @@
                 </button>
             </div>
             <ul class="mobile-nav-links">
-                <li><a href="#beranda" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Beranda</a></li>
+                <li><a href="#jadwal-siswa" class="mobile-nav-link" onclick="closeMobileNav(); focusStudentSearch();" style="background: var(--yellow-soft); color: var(--yellow-hover); font-weight: 700;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 🔍 Cari Jadwal Siswa (Live)</a></li>
+                <li><a href="#agenda-hari-ini" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 📅 Agenda Lengkap Hari Ini</a></li>
                 <li><a href="#ruang-kosong" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pantau Ruang Kosong</a></li>
                 <li><a href="#daftar-ruangan" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg> Katalog 22 Ruangan</a></li>
-                <li><a href="#agenda-hari-ini" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Agenda Hari Ini</a></li>
                 <li><a href="#fitur" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Fitur Sistem</a></li>
                 <li><a href="#alur" class="mobile-nav-link" onclick="closeMobileNav()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> Alur Peminjaman</a></li>
                 <li><a href="{{ route('calendar.index') }}" class="mobile-nav-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg> Kalender Sekolah</a></li>
@@ -1611,7 +2003,7 @@
                         Ke Dashboard ({{ auth()->user()->username ?? 'Pengguna' }})
                     </a>
                 @else
-                    <a href="#login-box" class="btn-mobile-login" onclick="closeMobileNav()">
+                    <a href="#login-box" class="btn-mobile-login" onclick="closeMobileNav(); switchHeroTab('login');">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         Masuk ke Akun Sistem
                     </a>
@@ -1638,6 +2030,31 @@
                 <p class="hero-subtitle">
                     Platform terpadu peminjaman ruang kelas & lab online, pemantauan ketersediaan sesi belajar real-time, dan pelaporan kerusakan fasilitas langsung ke PIC Lab & Sarpras.
                 </p>
+
+                {{-- Quick Student Schedule Search Widget (Langsung di Tampilan Utama) --}}
+                <div class="student-search-hero" id="jadwal-siswa" style="margin-bottom: 24px;">
+                    <div class="student-search-label">
+                        <span class="badge-student">Siswa / Civitas</span>
+                        <span>🔍 Cari Jadwal & Ketersediaan Ruangan:</span>
+                    </div>
+                    <div class="student-search-bar">
+                        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="heroStudentSearchInput" placeholder="Ketik nama ruang... (contoh: Lab 1, Lab 2, Ruang Wijaya Kusuma)" autocomplete="off" oninput="handleStudentInstantSearch(this.value)">
+                        <button type="button" class="btn-search-clear" id="btnSearchClear" style="display: none;" onclick="clearStudentInstantSearch()" aria-label="Hapus pencarian">✕</button>
+                    </div>
+
+                    {{-- Live Autocomplete Results Container --}}
+                    <div class="student-live-results" id="heroStudentSearchResults" style="display: none;"></div>
+
+                    {{-- Quick Filter Chips --}}
+                    <div class="student-quick-tags">
+                        <span class="quick-tags-title">Pintasan:</span>
+                        <button type="button" class="quick-tag-chip active" id="chipAll" onclick="filterStudentSchedule('all', this)">Semua ({{ $roomCount ?? 22 }})</button>
+                        <button type="button" class="quick-tag-chip" id="chipEmpty" onclick="filterStudentSchedule('empty', this)">🟢 Kosong ({{ $emptyRoomsCount ?? 0 }})</button>
+                        <button type="button" class="quick-tag-chip" id="chipBooked" onclick="filterStudentSchedule('booked', this)">🔴 Terisi ({{ count($todayBookedRoomIds ?? []) }})</button>
+                        <a href="#agenda-hari-ini" class="quick-tag-chip chip-agenda">📋 Tabel Agenda Hari Ini ↓</a>
+                    </div>
+                </div>
 
                 {{-- 3 Feature Pill Cards (Sesuai Desain Referensi) --}}
                 <div class="feature-pills">
@@ -1696,81 +2113,162 @@
                 </div>
             </div>
 
-            {{-- Right Column: The Sleek Card (Auth Form Sesuai Referensi) --}}
+            {{-- Right Column: The Sleek Dual-Mode Card (Siswa Schedule & Petugas Login) --}}
             <div class="hero-right" id="login-box">
                 <div class="sleek-auth-card">
-                    <div class="auth-card-head">
-                        <h3>Masuk ke Sistem</h3>
-                        <p>Akses akun Admin, Waka, PIC Lab, Guru Mata Pelajaran, atau Pengurus Organisasi.</p>
+                    
+                    {{-- Dual Tab Buttons --}}
+                    <div class="hero-card-tabs" role="tablist">
+                        <button type="button" class="hero-card-tab-btn active" id="tabBtnSchedule" onclick="switchHeroTab('schedule')" role="tab" aria-selected="true">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>Jadwal Ruang</span>
+                            <span class="live-pulse-badge">LIVE</span>
+                        </button>
+                        <button type="button" class="hero-card-tab-btn" id="tabBtnLogin" onclick="switchHeroTab('login')" role="tab" aria-selected="false">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                            <span>Masuk Petugas</span>
+                        </button>
                     </div>
 
-                    @if($errors->any())
-                        <div class="alert-error" style="margin-bottom: 16px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <span>{{ $errors->first() }}</span>
+                    {{-- TAB PANE 1: JADWAL SISWA / UMUM --}}
+                    <div class="hero-tab-pane active" id="paneSchedule" role="tabpanel">
+                        <div class="schedule-pane-header">
+                            <h3 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Pantauan Ruangan Hari Ini</h3>
+                            <p style="color: var(--chalk-muted); font-size: 0.78rem; margin: 0;">Siswa dapat langsung cek lab mana yang sedang kosong atau terisi sesi belajar.</p>
                         </div>
-                    @endif
 
-                    @auth
-                        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); border-radius: var(--radius-sm); padding: 20px; text-align: center;">
-                            <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; margin: 0 auto 12px;">
-                                {{ substr(auth()->user()->fullname ?? 'U', 0, 1) }}
+                        <div class="live-summary-stats">
+                            <div class="live-stat-badge stat-green">
+                                <span class="stat-num">{{ $emptyRoomsCount ?? 0 }}</span>
+                                <span class="stat-lbl">Ruang Kosong Siap Pakai</span>
                             </div>
-                            <h4 style="font-family: var(--font-display); font-size: 1.2rem; color: #fff; margin-bottom: 4px;">{{ auth()->user()->fullname }}</h4>
-                            <p style="color: var(--chalk-muted); font-size: 0.85rem; margin-bottom: 18px;">Peran: <strong style="color: var(--yellow);">{{ auth()->user()->role->role_name ?? 'User' }}</strong></p>
-                            
-                            <a href="{{ $dashboardUrl }}" class="btn-auth-submit" style="width: 100%; text-decoration: none;">
-                                Buka Dashboard Saya →
-                            </a>
+                            <div class="live-stat-badge stat-blue">
+                                <span class="stat-num">{{ count($todayBookedRoomIds ?? []) }}</span>
+                                <span class="stat-lbl">Ruang Beragenda Hari Ini</span>
+                            </div>
                         </div>
-                    @else
-                        <form method="POST" action="{{ route('login.post') }}" class="auth-form">
-                            @csrf
 
-                            <div class="form-group">
-                                <label class="form-label" for="username">Username / ID Pengguna</label>
-                                <div class="form-input-wrapper">
-                                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    <input type="text" id="username" name="username" class="auth-input" placeholder="Masukkan username Anda" value="{{ old('username') }}" required autofocus autocomplete="username">
+                        <div class="search-mini-wrap" style="margin-bottom: 12px;">
+                            <svg class="mini-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="filterMiniInput" placeholder="Saring lab (contoh: Lab 1, Lab 2, Wijaya)..." oninput="filterMiniSchedule(this.value)">
+                        </div>
+
+                        <div class="mini-schedule-list" id="miniScheduleList">
+                            @forelse($allRooms ?? [] as $r)
+                                @php
+                                    $isBooked = in_array($r->id, $todayBookedRoomIds ?? []);
+                                    $rEvents = collect($eventsToday ?? [])->where('room_id', $r->id);
+                                @endphp
+                                <div class="mini-schedule-item" data-room-name="{{ strtolower($r->room_name) }}" data-status="{{ $isBooked ? 'booked' : 'empty' }}">
+                                    <div class="mini-item-left">
+                                        <div class="mini-room-title">
+                                            <strong>{{ $r->room_name }}</strong>
+                                            @if($r->pic_name)
+                                                <span class="mini-pic-badge">PIC: {{ explode(' ', trim($r->pic_name))[0] }}</span>
+                                            @endif
+                                        </div>
+                                        @if($isBooked && $rEvents->isNotEmpty())
+                                            <div class="agenda-snippet" title="{{ $rEvents->first()->event_name }}">
+                                                📅 {{ $rEvents->first()->event_name }} ({{ substr($rEvents->first()->start_time, 0, 5) }}-{{ substr($rEvents->first()->end_time, 0, 5) }})
+                                            </div>
+                                        @else
+                                            <div class="mini-empty-desc">✨ Bebas KBM / Kosong</div>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        @if($isBooked)
+                                            <span class="badge-mini-booked">Terisi</span>
+                                        @else
+                                            <span class="badge-mini-empty">Kosong</span>
+                                        @endif
+                                    </div>
                                 </div>
-                            </div>
+                            @empty
+                                <div style="text-align: center; padding: 20px; color: var(--chalk-muted); font-size: 0.82rem;">Tidak ada data ruangan.</div>
+                            @endforelse
+                        </div>
 
-                            <div class="form-group">
-                                <label class="form-label" for="password">Kata Sandi</label>
-                                <div class="form-input-wrapper">
-                                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                    <input type="password" id="password" name="password" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
-                                    <button type="button" class="toggle-pwd" onclick="togglePasswordVisibility()" aria-label="Lihat kata sandi">
-                                        <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
+                        <a href="#agenda-hari-ini" class="btn-view-full-schedule">
+                            Lihat Tabel Jadwal Lengkap Hari Ini ↓
+                        </a>
+                    </div>
+
+                    {{-- TAB PANE 2: LOGIN PETUGAS / GURU --}}
+                    <div class="hero-tab-pane" id="paneLogin" role="tabpanel">
+                        <div class="auth-card-head">
+                            <h3>Masuk ke Sistem</h3>
+                            <p>Akses akun Admin, Waka, PIC Lab, Guru Mata Pelajaran, atau Pengurus Organisasi.</p>
+                        </div>
+
+                        @if($errors->any())
+                            <div class="alert-error" style="margin-bottom: 16px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                <span>{{ $errors->first() }}</span>
+                            </div>
+                        @endif
+
+                        @auth
+                            <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); border-radius: var(--radius-sm); padding: 20px; text-align: center;">
+                                <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; margin: 0 auto 12px;">
+                                    {{ substr(auth()->user()->fullname ?? 'U', 0, 1) }}
                                 </div>
+                                <h4 style="font-family: var(--font-display); font-size: 1.2rem; color: #fff; margin-bottom: 4px;">{{ auth()->user()->fullname }}</h4>
+                                <p style="color: var(--chalk-muted); font-size: 0.85rem; margin-bottom: 18px;">Peran: <strong style="color: var(--yellow);">{{ auth()->user()->role->role_name ?? 'User' }}</strong></p>
+                                
+                                <a href="{{ $dashboardUrl }}" class="btn-auth-submit" style="width: 100%; text-decoration: none;">
+                                    Buka Dashboard Saya →
+                                </a>
                             </div>
+                        @else
+                            <form method="POST" action="{{ route('login.post') }}" class="auth-form">
+                                @csrf
 
-                            <div class="form-meta">
-                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                                    <input type="checkbox" name="remember" style="accent-color: var(--yellow);">
-                                    <span>Ingat saya</span>
-                                </label>
-                                <a href="{{ route('password.forgot.form') }}">Lupa Sandi? (WA OTP)</a>
+                                <div class="form-group">
+                                    <label class="form-label" for="username">Username / ID Pengguna</label>
+                                    <div class="form-input-wrapper">
+                                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                        <input type="text" id="username" name="username" class="auth-input" placeholder="Masukkan username Anda" value="{{ old('username') }}" required autocomplete="username">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="password">Kata Sandi</label>
+                                    <div class="form-input-wrapper">
+                                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        <input type="password" id="password" name="password" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+                                        <button type="button" class="toggle-pwd" onclick="togglePasswordVisibility()" aria-label="Lihat kata sandi">
+                                            <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-meta">
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                        <input type="checkbox" name="remember" style="accent-color: var(--yellow);">
+                                        <span>Ingat saya</span>
+                                    </label>
+                                    <a href="{{ route('password.forgot.form') }}">Lupa Sandi? (WA OTP)</a>
+                                </div>
+
+                                <button type="submit" class="btn-auth-submit">
+                                    Masuk ke Dashboard
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                                </button>
+                            </form>
+                        @endauth
+
+                        <div class="auth-roles-footer">
+                            <p>Hak Akses & Peran Sistem</p>
+                            <div class="role-chips">
+                                <span class="role-chip">👑 Admin</span>
+                                <span class="role-chip">🏛️ Waka</span>
+                                <span class="role-chip">🧪 PIC Lab</span>
+                                <span class="role-chip">👨‍🏫 Guru</span>
+                                <span class="role-chip">👥 Organisasi</span>
                             </div>
-
-                            <button type="submit" class="btn-auth-submit">
-                                Masuk ke Dashboard
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                            </button>
-                        </form>
-                    @endauth
-
-                    <div class="auth-roles-footer">
-                        <p>Hak Akses & Peran Sistem</p>
-                        <div class="role-chips">
-                            <span class="role-chip">👑 Admin</span>
-                            <span class="role-chip">🏛️ Waka</span>
-                            <span class="role-chip">🧪 PIC Lab</span>
-                            <span class="role-chip">👨‍🏫 Guru</span>
-                            <span class="role-chip">👥 Organisasi</span>
                         </div>
                     </div>
+
                 </div>
             </div>
 
@@ -1818,103 +2316,11 @@
         </div>
     </section>
 
-    {{-- =================== SECTION: RUANG KOSONG HARI INI (REAL-TIME) =================== --}}
-    <section class="section-container" id="ruang-kosong">
-        <div class="section-header">
-            <span class="section-tag">Ketersediaan Real-Time</span>
-            <h2 class="section-title">Pantau Ruang Kosong Hari Ini</h2>
-            <p class="section-desc">Pilih sesi pembelajaran di bawah untuk memfilter ruangan mana saja yang sedang kosong dan siap digunakan hari ini.</p>
-        </div>
-
-        {{-- Filter Sesi Pembelajaran --}}
-        <div class="session-filter-wrapper">
-            <span class="session-filter-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                Filter Sesi:
-            </span>
-            <div class="session-btn-group">
-                <button type="button" class="btn-session-tab active" data-sess="all" onclick="filterLandingRooms('all', this)">Semua Sesi</button>
-                @for($s = 1; $s <= 11; $s++)
-                    <button type="button" class="btn-session-tab" data-sess="{{ $s }}" onclick="filterLandingRooms('{{ $s }}', this)">Sesi {{ $s }}</button>
-                @endfor
-            </div>
-        </div>
-
-        {{-- Grid Ruangan --}}
-        <div class="rooms-grid">
-            @forelse($allRooms ?? [] as $room)
-                @php
-                    $isBookedToday = in_array($room->id, $todayBookedRoomIds ?? []);
-                    $eventsInRoom = collect($eventsToday ?? [])->where('room_id', $room->id);
-                    $bookedSessionsStr = $eventsInRoom->map(function($ev) {
-                        return substr($ev->start_time, 0, 5) . '-' . substr($ev->end_time, 0, 5);
-                    })->implode(';');
-                @endphp
-                <div class="room-card" data-sessions="{{ $bookedSessionsStr }}" data-booked="{{ $isBookedToday ? '1' : '0' }}">
-                    <div class="room-card-header">
-                        <div class="room-title-area">
-                            <h3>{{ $room->room_name }}</h3>
-                            <span class="room-type-badge">{{ str_replace('_', ' ', $room->room_type) }}</span>
-                        </div>
-                        @if($isBookedToday)
-                            <span class="room-status-badge status-booked">
-                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #3b82f6;"></span>
-                                Dipakai Hari Ini
-                            </span>
-                        @else
-                            <span class="room-status-badge status-empty">
-                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981;"></span>
-                                Kosong & Siap
-                            </span>
-                        @endif
-                    </div>
-
-                    <div class="room-card-body">
-                        <div class="room-info-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            <span>Kapasitas: <strong>{{ $room->capacity }} Orang</strong></span>
-                        </div>
-                        <div class="room-info-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            <span>Lokasi: {{ $room->location ?? 'Gedung Utama' }}</span>
-                        </div>
-                        <div class="room-info-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            <span>PIC: {{ $room->pic_name ?? 'Sarpras Sekolah' }}</span>
-                        </div>
-
-                        @if($eventsInRoom->isNotEmpty())
-                            <div style="background: var(--paper); padding: 8px 10px; border-radius: 6px; font-size: 0.75rem; margin-top: 4px;">
-                                <strong style="color: var(--board);">Agenda Hari Ini:</strong>
-                                @foreach($eventsInRoom as $ev)
-                                    <div style="color: var(--ink-muted); margin-top: 2px;">
-                                        • {{ $ev->event_name }} ({{ $formatSessionTime($ev->start_time, $ev->end_time) }})
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
-
-                    <div class="room-card-footer">
-                        <span style="font-size: 0.75rem; color: var(--ink-muted);">Sesi 1 - 11</span>
-                        <a href="#login-box" class="btn-pinjam-shortcut">
-                            + Pinjam Ruangan
-                        </a>
-                    </div>
-                </div>
-            @empty
-                <div style="grid-column: 1/-1; text-align: center; padding: 48px; background: #ffffff; border-radius: var(--radius-md); border: 1px dashed var(--line);">
-                    <p style="color: var(--ink-muted);">Belum ada data ruangan terdaftar di sistem.</p>
-                </div>
-            @endforelse
-        </div>
-    </section>
-
     {{-- =================== SECTION: AGENDA HARI INI =================== --}}
     <section class="section-container agenda-section" id="agenda-hari-ini">
         <div class="section-header">
-            <span class="section-tag">Jadwal Penggunaan</span>
-            <h2 class="section-title">Agenda Penggunaan Ruangan Hari Ini</h2>
+            <span class="section-tag">Jadwal Penggunaan Hari Ini</span>
+            <h2 class="section-title">Agenda Penggunaan Ruangan & Laboratorium</h2>
             <p class="section-desc">Berikut daftar kegiatan belajar mengajar, ujian praktek, atau kegiatan ekstrakurikuler yang telah disetujui untuk hari ini.</p>
         </div>
 
@@ -1924,7 +2330,7 @@
         </div>
 
         <div class="agenda-table-wrapper">
-            <table class="agenda-table">
+            <table class="agenda-table" id="agendaTable">
                 <thead>
                     <tr>
                         <th>Waktu / Sesi</th>
@@ -1936,7 +2342,7 @@
                 </thead>
                 <tbody>
                     @forelse($eventsToday ?? [] as $event)
-                        <tr>
+                        <tr class="agenda-table-row" data-room="{{ strtolower($event->room_name) }}">
                             <td>
                                 <strong>{{ $formatSessionTime($event->start_time, $event->end_time) }}</strong>
                             </td>
@@ -1985,6 +2391,98 @@
             <a href="{{ route('calendar.index') }}" class="btn-nav-login" style="display: inline-flex;">
                 Lihat Kalender Bulanan Sekolah Lengkap →
             </a>
+        </div>
+    </section>
+
+    {{-- =================== SECTION: RUANG KOSONG HARI INI (REAL-TIME) =================== --}}
+    <section class="section-container" id="ruang-kosong">
+        <div class="section-header">
+            <span class="section-tag">Ketersediaan Real-Time</span>
+            <h2 class="section-title">Pantau Ruang Kosong Hari Ini</h2>
+            <p class="section-desc">Pilih sesi pembelajaran di bawah untuk memfilter ruangan mana saja yang sedang kosong dan siap digunakan hari ini.</p>
+        </div>
+
+        {{-- Filter Sesi Pembelajaran --}}
+        <div class="session-filter-wrapper">
+            <span class="session-filter-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Filter Sesi:
+            </span>
+            <div class="session-btn-group">
+                <button type="button" class="btn-session-tab active" data-sess="all" onclick="filterLandingRooms('all', this)">Semua Sesi</button>
+                @for($s = 1; $s <= 11; $s++)
+                    <button type="button" class="btn-session-tab" data-sess="{{ $s }}" onclick="filterLandingRooms('{{ $s }}', this)">Sesi {{ $s }}</button>
+                @endfor
+            </div>
+        </div>
+
+        {{-- Grid Ruangan --}}
+        <div class="rooms-grid" id="roomsGridContainer">
+            @forelse($allRooms ?? [] as $room)
+                @php
+                    $isBookedToday = in_array($room->id, $todayBookedRoomIds ?? []);
+                    $eventsInRoom = collect($eventsToday ?? [])->where('room_id', $room->id);
+                    $bookedSessionsStr = $eventsInRoom->map(function($ev) {
+                        return substr($ev->start_time, 0, 5) . '-' . substr($ev->end_time, 0, 5);
+                    })->implode(';');
+                @endphp
+                <div class="room-card" id="room-card-{{ $room->id }}" data-sessions="{{ $bookedSessionsStr }}" data-booked="{{ $isBookedToday ? '1' : '0' }}" data-room-name="{{ strtolower($room->room_name) }}">
+                    <div class="room-card-header">
+                        <div class="room-title-area">
+                            <h3>{{ $room->room_name }}</h3>
+                            <span class="room-type-badge">{{ str_replace('_', ' ', $room->room_type) }}</span>
+                        </div>
+                        @if($isBookedToday)
+                            <span class="room-status-badge status-booked">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #3b82f6;"></span>
+                                Dipakai Hari Ini
+                            </span>
+                        @else
+                            <span class="room-status-badge status-empty">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981;"></span>
+                                Kosong & Siap
+                            </span>
+                        @endif
+                    </div>
+
+                    <div class="room-card-body">
+                        <div class="room-info-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            <span>Kapasitas: <strong>{{ $room->capacity }} Orang</strong></span>
+                        </div>
+                        <div class="room-info-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span>Lokasi: {{ $room->location ?? 'Gedung Utama' }}</span>
+                        </div>
+                        <div class="room-info-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span>PIC: {{ $room->pic_name ?? 'Sarpras Sekolah' }}</span>
+                        </div>
+
+                        @if($eventsInRoom->isNotEmpty())
+                            <div style="background: var(--paper); padding: 8px 10px; border-radius: 6px; font-size: 0.75rem; margin-top: 4px;">
+                                <strong style="color: var(--board);">Agenda Hari Ini:</strong>
+                                @foreach($eventsInRoom as $ev)
+                                    <div style="color: var(--ink-muted); margin-top: 2px;">
+                                        • {{ $ev->event_name }} ({{ $formatSessionTime($ev->start_time, $ev->end_time) }})
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="room-card-footer">
+                        <span style="font-size: 0.75rem; color: var(--ink-muted);">Sesi 1 - 11</span>
+                        <a href="#login-box" class="btn-pinjam-shortcut" onclick="switchHeroTab('login')">
+                            + Pinjam Ruangan
+                        </a>
+                    </div>
+                </div>
+            @empty
+                <div style="grid-column: 1/-1; text-align: center; padding: 48px; background: #ffffff; border-radius: var(--radius-md); border: 1px dashed var(--line);">
+                    <p style="color: var(--ink-muted);">Belum ada data ruangan terdaftar di sistem.</p>
+                </div>
+            @endforelse
         </div>
     </section>
 
@@ -2237,6 +2735,210 @@
                 pwdInput.type = 'password';
                 eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
             }
+        }
+
+        // Hero Card Tab Switching (Jadwal Siswa vs Login Petugas)
+        function switchHeroTab(tab) {
+            const btnSched = document.getElementById('tabBtnSchedule');
+            const btnLogin = document.getElementById('tabBtnLogin');
+            const paneSched = document.getElementById('paneSchedule');
+            const paneLogin = document.getElementById('paneLogin');
+
+            if (tab === 'login') {
+                if (btnSched) { btnSched.classList.remove('active'); btnSched.setAttribute('aria-selected', 'false'); }
+                if (btnLogin) { btnLogin.classList.add('active'); btnLogin.setAttribute('aria-selected', 'true'); }
+                if (paneSched) paneSched.classList.remove('active');
+                if (paneLogin) paneLogin.classList.add('active');
+                const userField = document.getElementById('username');
+                if (userField) setTimeout(() => userField.focus(), 150);
+            } else {
+                if (btnLogin) { btnLogin.classList.remove('active'); btnLogin.setAttribute('aria-selected', 'false'); }
+                if (btnSched) { btnSched.classList.add('active'); btnSched.setAttribute('aria-selected', 'true'); }
+                if (paneLogin) paneLogin.classList.remove('active');
+                if (paneSched) paneSched.classList.add('active');
+            }
+        }
+
+        @if($errors->any())
+            document.addEventListener('DOMContentLoaded', function() {
+                switchHeroTab('login');
+            });
+        @endif
+
+        // Focus & Scroll to Student Search Bar
+        function focusStudentSearch(e) {
+            if (e) e.preventDefault();
+            const el = document.getElementById('heroStudentSearchInput');
+            const target = document.getElementById('jadwal-siswa');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (el) {
+                setTimeout(() => {
+                    el.focus();
+                    el.select();
+                }, 350);
+            }
+        }
+
+        // Mini Schedule Filter in Hero Right Card
+        function filterMiniSchedule(val) {
+            const q = (val || '').toLowerCase().trim();
+            const items = document.querySelectorAll('.mini-schedule-item');
+            items.forEach(it => {
+                const name = it.getAttribute('data-room-name') || '';
+                if (!q || name.includes(q)) {
+                    it.style.display = 'flex';
+                } else {
+                    it.style.display = 'none';
+                }
+            });
+        }
+
+        // Student Data Source for Hero Left Autocomplete
+        const studentRoomsData = [
+            @foreach($allRooms ?? [] as $r)
+                @php
+                    $isBooked = in_array($r->id, $todayBookedRoomIds ?? []);
+                    $rEvents = collect($eventsToday ?? [])->where('room_id', $r->id);
+                    $firstEv = $rEvents->first();
+                    $agendaDesc = $firstEv ? $firstEv->event_name . ' (' . substr($firstEv->start_time, 0, 5) . '-' . substr($firstEv->end_time, 0, 5) . ')' : '';
+                @endphp
+                {
+                    id: {{ $r->id }},
+                    name: "{{ addslashes($r->room_name) }}",
+                    type: "{{ addslashes(str_replace('_', ' ', $r->room_type)) }}",
+                    pic: "{{ addslashes($r->pic_name ?? 'Sarpras') }}",
+                    isBooked: {{ $isBooked ? 'true' : 'false' }},
+                    agenda: "{{ addslashes($agendaDesc) }}"
+                },
+            @endforeach
+        ];
+
+        // Hero Left Instant Search Handler
+        function handleStudentInstantSearch(val) {
+            const clearBtn = document.getElementById('btnSearchClear');
+            const resultsBox = document.getElementById('heroStudentSearchResults');
+            const q = (val || '').toLowerCase().trim();
+
+            if (clearBtn) clearBtn.style.display = q ? 'grid' : 'none';
+
+            if (!resultsBox) return;
+
+            if (!q) {
+                resultsBox.style.display = 'none';
+                resultsBox.innerHTML = '';
+                // Kembalikan filter list mini juga
+                filterMiniSchedule('');
+                return;
+            }
+
+            // Sync filter ke mini-schedule di tab kanan juga
+            filterMiniSchedule(q);
+
+            const matches = studentRoomsData.filter(r => 
+                r.name.toLowerCase().includes(q) || 
+                r.type.toLowerCase().includes(q) || 
+                r.pic.toLowerCase().includes(q) ||
+                r.agenda.toLowerCase().includes(q)
+            );
+
+            if (matches.length === 0) {
+                resultsBox.innerHTML = '<div style="padding: 10px 14px; font-size: 0.82rem; color: var(--ink-muted); text-align: center;">Tidak ditemukan ruangan dengan kata kunci "<strong>' + val + '</strong>".</div>';
+                resultsBox.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            matches.slice(0, 7).forEach(r => {
+                const statusBadge = r.isBooked 
+                    ? '<span style="font-size: 0.7rem; font-weight: 700; background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 9999px;">🔴 Terisi</span>'
+                    : '<span style="font-size: 0.7rem; font-weight: 700; background: #d1fae5; color: #047857; padding: 2px 8px; border-radius: 9999px;">🟢 Kosong</span>';
+                
+                const agendaText = r.isBooked && r.agenda 
+                    ? '<span style="color: #2563eb; font-size: 0.74rem; display: block; margin-top: 2px;">📅 ' + r.agenda + '</span>' 
+                    : '<span style="color: #059669; font-size: 0.74rem; display: block; margin-top: 2px;">✨ Siap digunakan (bebas KBM)</span>';
+
+                html += `
+                    <div class="live-result-item" onclick="selectStudentRoom(${r.id})">
+                        <div>
+                            <strong style="color: var(--board);">${r.name}</strong>
+                            <span style="font-size: 0.72rem; color: var(--ink-muted); margin-left: 6px;">(${r.type} • PIC: ${r.pic.split(' ')[0]})</span>
+                            ${agendaText}
+                        </div>
+                        <div>
+                            ${statusBadge}
+                        </div>
+                    </div>
+                `;
+            });
+
+            resultsBox.innerHTML = html;
+            resultsBox.style.display = 'block';
+        }
+
+        function clearStudentInstantSearch() {
+            const input = document.getElementById('heroStudentSearchInput');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            handleStudentInstantSearch('');
+        }
+
+        // Select Room from Autocomplete: Scroll & Highlight Card
+        function selectStudentRoom(roomId) {
+            const resultsBox = document.getElementById('heroStudentSearchResults');
+            if (resultsBox) resultsBox.style.display = 'none';
+
+            const card = document.getElementById('room-card-' + roomId);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.style.transition = 'all 0.4s ease';
+                card.style.outline = '3px solid var(--yellow)';
+                card.style.transform = 'scale(1.03)';
+                setTimeout(() => {
+                    card.style.outline = 'none';
+                    card.style.transform = 'none';
+                }, 2000);
+            } else {
+                const target = document.getElementById('agenda-hari-ini');
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Student Quick Tag Filter (Semua / Kosong / Terisi)
+        function filterStudentSchedule(type, btn) {
+            document.querySelectorAll('.student-quick-tags .quick-tag-chip').forEach(b => {
+                b.classList.remove('active');
+            });
+            if (btn) btn.classList.add('active');
+
+            // Filter Hero Card Mini List
+            const miniItems = document.querySelectorAll('.mini-schedule-item');
+            miniItems.forEach(it => {
+                const status = it.getAttribute('data-status');
+                if (type === 'all') {
+                    it.style.display = 'flex';
+                } else if (type === 'empty') {
+                    it.style.display = status === 'empty' ? 'flex' : 'none';
+                } else if (type === 'booked') {
+                    it.style.display = status === 'booked' ? 'flex' : 'none';
+                }
+            });
+
+            // Filter Main Grid Cards below
+            const cards = document.querySelectorAll('.room-card');
+            cards.forEach(card => {
+                const isBooked = card.getAttribute('data-booked') === '1';
+                if (type === 'all') {
+                    card.style.display = 'flex';
+                } else if (type === 'empty') {
+                    card.style.display = !isBooked ? 'flex' : 'none';
+                } else if (type === 'booked') {
+                    card.style.display = isBooked ? 'flex' : 'none';
+                }
+            });
         }
 
         // Real-Time Room Filtering based on Sessions
