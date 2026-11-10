@@ -6,6 +6,7 @@ use App\Models\Complaint;
 use App\Models\Room;
 use App\Services\ComplaintStatusService;
 use App\Services\ComplaintWhatsAppService;
+use App\Services\ImageCompressionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -15,8 +16,8 @@ use Throwable;
 
 class ComplaintController extends Controller
 {
-    // Simpan pengaduan kerusakan baru
-    public function store(Request $request)
+    // Simpan pengaduan kerusakan baru dengan kompresi foto otomatis
+    public function store(Request $request, ImageCompressionService $compression)
     {
         $data = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
@@ -36,12 +37,7 @@ class ComplaintController extends Controller
         }
 
         $photo = $request->file('photo');
-        $ext = strtolower($photo->getClientOriginalExtension() ?: ($photo->guessExtension() ?: 'jpg'));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            $ext = 'jpg';
-        }
-        $filename = Str::uuid() . '.' . $ext;
-        $photoPath = $photo->storeAs('complaints', $filename, 'public');
+        $photoPath = $compression->compressAndStore($photo, 'complaints', 1280, 1280, 75);
         abort_unless($photoPath, 500, 'Foto pengaduan gagal disimpan ke penyimpanan publik.');
 
         try {

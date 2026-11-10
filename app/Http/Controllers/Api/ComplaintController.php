@@ -7,6 +7,7 @@ use App\Models\Complaint;
 use App\Models\Room;
 use App\Services\ComplaintStatusService;
 use App\Services\ComplaintWhatsAppService;
+use App\Services\ImageCompressionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -50,7 +51,7 @@ class ComplaintController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ImageCompressionService $compression)
     {
         $data = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
@@ -70,30 +71,8 @@ class ComplaintController extends Controller
         abort_unless($room->is_active, 422, 'Ruangan tidak aktif.');
 
         $photo = $request->file('photo');
-        $ext = strtolower($photo->getClientOriginalExtension() ?: 'jpg');
-        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            $ext = 'jpg';
-        }
-        $filename = Str::uuid() . '.' . $ext;
-        $path = 'complaints/' . $filename;
-
-        // Try re-encoding with Intervention Image if available, fallback to native storeAs
-        $saved = false;
-        try {
-            $encoded = Image::decode($photo)
-                ->scaleDown(width: 1600, height: 1600)
-                ->encodeUsingMediaType('image/jpeg', quality: 78);
-            $path = 'complaints/' . Str::uuid() . '.jpg';
-            $saved = Storage::disk('public')->put($path, (string) $encoded);
-        } catch (Throwable) {
-            $storedPath = $photo->storeAs('complaints', $filename, 'public');
-            if ($storedPath) {
-                $path = $storedPath;
-                $saved = true;
-            }
-        }
-
-        abort_unless($saved, 500, 'Foto pengaduan gagal disimpan ke server.');
+        $path = $compression->compressAndStore($photo, 'complaints', 1280, 1280, 75);
+        abort_unless($path, 500, 'Foto pengaduan gagal disimpan ke server.');
 
         $description = trim($data['description']);
         if ($request->filled('facility_name')) {
