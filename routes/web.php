@@ -137,7 +137,95 @@ Route::middleware(['auth'])->group(function () use ($getEvents, $getComplaints) 
             $complaints = $getComplaints(reporterId: $user->id);
         }
 
-        return view('print_report', compact('events', 'complaints'));
+        // ---- Filter periode laporan: semua / mingguan / bulanan / custom ----
+        $tz = 'Asia/Jakarta';
+        $period = request('period', 'all');
+        if (!in_array($period, ['all', 'weekly', 'monthly', 'custom'], true)) {
+            $period = 'all';
+        }
+
+        $from = null;
+        $to = null;
+        $periodLabel = 'Semua Periode';
+
+        try {
+            if ($period === 'weekly') {
+                // input type="week" => format "2026-W46"; fallback tanggal acuan
+                $weekInput = (string) request('week', '');
+                if (preg_match('/^(\d{4})-W(\d{2})$/', $weekInput, $m)) {
+                    $from = \Carbon\Carbon::now($tz)->setISODate((int) $m[1], (int) $m[2])->startOfWeek(\Carbon\Carbon::MONDAY);
+                } else {
+                    $from = \Carbon\Carbon::now($tz)->startOfWeek(\Carbon\Carbon::MONDAY);
+                }
+                $to = $from->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+                $periodLabel = 'Mingguan: ' . $from->locale('id')->translatedFormat('d M Y')
+                    . ' – ' . $to->locale('id')->translatedFormat('d M Y')
+                    . ' (Minggu ke-' . $from->isoWeek() . ')';
+            } elseif ($period === 'monthly') {
+                $monthInput = (string) request('month', '');
+                $from = preg_match('/^\d{4}-\d{2}$/', $monthInput)
+                    ? \Carbon\Carbon::createFromFormat('Y-m-d', $monthInput . '-01', $tz)->startOfMonth()
+                    : \Carbon\Carbon::now($tz)->startOfMonth();
+                $to = $from->copy()->endOfMonth();
+                $periodLabel = 'Bulanan: ' . $from->locale('id')->translatedFormat('F Y');
+            } elseif ($period === 'custom') {
+                $from = \Carbon\Carbon::parse(request('from', now($tz)->toDateString()), $tz)->startOfDay();
+                $to = \Carbon\Carbon::parse(request('to', $from->toDateString()), $tz)->endOfDay();
+                if ($to->lt($from)) {
+                    [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+                }
+                $periodLabel = 'Periode: ' . $from->locale('id')->translatedFormat('d M Y')
+                    . ' – ' . $to->locale('id')->translatedFormat('d M Y');
+            }
+        } catch (\Throwable $e) {
+            $period = 'all';
+            $from = $to = null;
+            $periodLabel = 'Semua Periode';
+        }
+
+        if ($from && $to) {
+            $fromStr = $from->toDateString();
+            $toStr = $to->toDateString();
+
+            $events = collect($events)->filter(function ($e) use ($fromStr, $toStr) {
+                $d = substr((string) $e->date, 0, 10);
+                return $d >= $fromStr && $d <= $toStr;
+            })->values();
+
+            $complaints = collect($complaints)->filter(function ($c) use ($fromStr, $toStr) {
+                if (empty($c->reported_at)) return false;
+                $d = substr((string) $c->reported_at, 0, 10);
+                return $d >= $fromStr && $d <= $toStr;
+            })->values();
+        }
+
+        // Urutkan agenda kronologis (tanggal lalu jam) agar rapi untuk rekap periode
+        $events = collect($events)->sortBy(fn ($e) => substr((string) $e->date, 0, 10) . ' ' . $e->start_time)->values();
+
+        $eventStats = [
+            'total'    => $events->count(),
+            'approved' => $events->whereIn('status', ['approved', 'moved'])->count(),
+            'pending'  => $events->where('status', 'pending')->count(),
+            'rejected' => $events->where('status', 'rejected')->count(),
+            'rooms'    => $events->pluck('room_name')->unique()->count(),
+        ];
+
+        $dashboardUrl = match (true) {
+            in_array($role, ['Admin', 'Waka'], true) => url('/admin/dashboard'),
+            $role === 'PIC' => url('/pic/dashboard'),
+            default => url('/guru/dashboard'),
+        };
+
+        return view('print_report', [
+            'events'       => $events,
+            'complaints'   => $complaints,
+            'period'       => $period,
+            'periodLabel'  => $periodLabel,
+            'from'         => $from,
+            'to'           => $to,
+            'eventStats'   => $eventStats,
+            'dashboardUrl' => $dashboardUrl,
+        ]);
     })->middleware('role:Admin,Waka,PIC,Guru,Organisasi')->name('report.print');
 
     // ----------------------------------------------------------------------

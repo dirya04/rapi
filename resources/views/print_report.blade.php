@@ -117,27 +117,110 @@
             .badge { border: 1px solid #999; background: #fff !important; color: #000 !important; }
         }
         @media (max-width: 640px) { .paper { padding: 28px 18px 36px; margin: 12px; } }
+
+        /* ---------- Panel filter periode (tidak ikut tercetak) ---------- */
+        .filter-bar { max-width: 980px; margin: 20px auto 0; background: #fff; border-radius: 10px; padding: 16px 20px; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+        .filter-bar form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+        .filter-bar .tabs { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; margin-bottom: 4px; }
+        .filter-bar .tabs label { cursor: pointer; padding: 7px 14px; border-radius: 999px; border: 1.5px solid var(--line); font-weight: 600; font-size: .84rem; color: var(--board); user-select: none; }
+        .filter-bar .tabs input { display: none; }
+        .filter-bar .tabs input:checked + span { color: #fff; }
+        .filter-bar .tabs label:has(input:checked) { background: var(--board); border-color: var(--board); color: #fff; }
+        .filter-bar .fld { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); font-weight: 600; }
+        .filter-bar .fld input { padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 8px; font: 500 .9rem var(--font); color: var(--ink); }
+        .filter-bar .btn-apply { background: var(--board); color: #fff; }
+        .filter-bar .btn-apply:hover { background: #0c2a24; }
+        .filter-bar .hint { width: 100%; font-size: .78rem; color: var(--muted); }
+        .period-tag { display: inline-block; margin-top: 8px; padding: 4px 14px; border-radius: 999px; background: #fdf0c9; color: #6b4f00; font-weight: 700; font-size: .85rem; }
+        .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 24px; }
+        .stats div { border: 1px solid var(--line); border-radius: 8px; padding: 10px; text-align: center; }
+        .stats b { display: block; font-size: 1.3rem; color: var(--board); }
+        .stats span { font-size: .74rem; color: var(--muted); }
+        .badge.reject { background: #fde2e1; color: #8e2a1c; }
+        .badge.moved { background: #e0ecfb; color: #1a568c; }
+        @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+        @media print {
+            .filter-bar { display: none; }
+            .period-tag { background: #fff !important; border: 1px solid #999; color: #000 !important; }
+            .stats div { border-color: #999; }
+        }
     </style>
 </head>
 <body>
 
     <div class="toolbar">
-        <a href="{{ url('/admin/dashboard') }}" class="btn btn-back">← Kembali ke dashboard</a>
+        <a href="{{ $dashboardUrl ?? url('/admin/dashboard') }}" class="btn btn-back">← Kembali ke dashboard</a>
         <div class="actions">
             <button type="button" class="btn btn-print" onclick="window.print()">🖨️ Cetak / simpan PDF</button>
         </div>
+    </div>
+
+    @php
+        $nowWib = now('Asia/Jakarta')->locale('id');
+        $period = $period ?? 'all';
+        $from = $from ?? null;
+        $to = $to ?? null;
+        $weekValue = ($period === 'weekly' && $from) ? $from->format('o-\WW') : now('Asia/Jakarta')->format('o-\WW');
+        $monthValue = ($period === 'monthly' && $from) ? $from->format('Y-m') : now('Asia/Jakarta')->format('Y-m');
+        $fromValue = ($period === 'custom' && $from) ? $from->toDateString() : now('Asia/Jakarta')->startOfMonth()->toDateString();
+        $toValue = ($period === 'custom' && $to) ? $to->toDateString() : now('Asia/Jakarta')->toDateString();
+        $statusLabels = ['approved' => 'Disetujui', 'pending' => 'Menunggu', 'rejected' => 'Ditolak', 'moved' => 'Dipindah'];
+        $statusClass = ['approved' => 'done', 'pending' => 'wait', 'rejected' => 'reject', 'moved' => 'moved'];
+    @endphp
+
+    {{-- Panel Filter Periode (tidak ikut tercetak) --}}
+    <div class="filter-bar">
+        <form method="GET" action="{{ route('report.print') }}" id="period-form">
+            <div class="tabs" role="radiogroup" aria-label="Pilih periode laporan">
+                <label><input type="radio" name="period" value="weekly" {{ $period === 'weekly' ? 'checked' : '' }}><span>📅 Mingguan</span></label>
+                <label><input type="radio" name="period" value="monthly" {{ $period === 'monthly' ? 'checked' : '' }}><span>🗓️ Bulanan</span></label>
+                <label><input type="radio" name="period" value="custom" {{ $period === 'custom' ? 'checked' : '' }}><span>📆 Rentang Tanggal</span></label>
+                <label><input type="radio" name="period" value="all" {{ $period === 'all' ? 'checked' : '' }}><span>📋 Semua</span></label>
+            </div>
+
+            <div class="fld" data-for="weekly">
+                Pilih minggu
+                <input type="week" name="week" value="{{ $weekValue }}">
+            </div>
+            <div class="fld" data-for="monthly">
+                Pilih bulan
+                <input type="month" name="month" value="{{ $monthValue }}">
+            </div>
+            <div class="fld" data-for="custom">
+                Dari tanggal
+                <input type="date" name="from" value="{{ $fromValue }}">
+            </div>
+            <div class="fld" data-for="custom">
+                Sampai tanggal
+                <input type="date" name="to" value="{{ $toValue }}">
+            </div>
+
+            <button type="submit" class="btn btn-apply">🔍 Tampilkan</button>
+            <p class="hint">Pilih periode, klik <b>Tampilkan</b>, lalu tekan <b>Cetak / simpan PDF</b>. Panel ini tidak ikut tercetak.</p>
+        </form>
     </div>
 
     <main class="paper">
         <header class="kop">
             <h1>REKAPITULASI APLIKASI RAPI-SEKOLAH</h1>
             <p>Laporan Penggunaan Ruangan & Catatan Kerusakan Fasilitas</p>
+            <span class="period-tag">{{ $periodLabel ?? 'Semua Periode' }}</span>
         </header>
 
         <div class="info">
-            <span>Dicetak pada: <b>{{ now()->locale('id')->translatedFormat('d F Y, H:i') }}</b></span>
+            <span>Dicetak pada: <b>{{ $nowWib->translatedFormat('d F Y, H:i') }} WIB</b></span>
             <span>Oleh: <b>{{ session('fullname') ?? 'Administrator' }}</b> ({{ session('role_name') ?? 'Waka/Admin' }})</span>
         </div>
+
+        @isset($eventStats)
+            <div class="stats">
+                <div><b>{{ $eventStats['total'] }}</b><span>Total peminjaman</span></div>
+                <div><b>{{ $eventStats['approved'] }}</b><span>Disetujui</span></div>
+                <div><b>{{ $eventStats['pending'] }}</b><span>Menunggu</span></div>
+                <div><b>{{ $eventStats['rejected'] }}</b><span>Ditolak</span></div>
+                <div><b>{{ $eventStats['rooms'] }}</b><span>Ruangan terpakai</span></div>
+            </div>
+        @endisset
 
         {{-- 1. Penggunaan Ruangan --}}
         <section>
@@ -151,6 +234,7 @@
                             <th>Ruangan</th>
                             <th>Tanggal</th>
                             <th>Waktu</th>
+                            <th>Status</th>
                             <th>Catatan mutasi (Waka)</th>
                         </tr>
                     </thead>
@@ -160,12 +244,13 @@
                                 <td class="no">{{ $loop->iteration }}</td>
                                 <td>{{ $event->event_name }}</td>
                                 <td>{{ $event->room_name }}</td>
-                                <td class="nowrap">{{ \Carbon\Carbon::parse($event->date)->locale('id')->translatedFormat('d M Y') }}</td>
+                                <td class="nowrap">{{ \Carbon\Carbon::parse($event->date)->locale('id')->translatedFormat('D, d M Y') }}</td>
                                 <td class="nowrap">{{ $formatSessionTime($event->start_time, $event->end_time) }}</td>
+                                <td><span class="badge {{ $statusClass[$event->status] ?? 'wait' }}">{{ $statusLabels[$event->status] ?? ucfirst($event->status) }}</span></td>
                                 <td>{{ $event->move_reason ?: '-' }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="empty">Belum ada data agenda.</td></tr>
+                            <tr><td colspan="7" class="empty">Tidak ada data peminjaman pada periode ini.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -200,7 +285,7 @@
                                 <td><span class="badge {{ $selesai ? 'done' : 'wait' }}">{{ $status }}</span></td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="empty">Belum ada data pengaduan.</td></tr>
+                            <tr><td colspan="5" class="empty">Tidak ada data pengaduan pada periode ini.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -209,7 +294,7 @@
 
         <div class="sign">
             <div>
-                {{ now()->locale('id')->translatedFormat('d F Y') }}<br>
+                {{ $nowWib->translatedFormat('d F Y') }}<br>
                 Mengetahui,
                 <div class="space"></div>
                 <b>{{ session('fullname') ?? 'Waka/Admin' }}</b>
@@ -217,5 +302,25 @@
         </div>
     </main>
 
+    <script>
+        // Tampilkan input sesuai periode yang dipilih (mingguan / bulanan / rentang)
+        (function () {
+            const form = document.getElementById('period-form');
+            if (!form) return;
+            const sync = () => {
+                const val = form.querySelector('input[name="period"]:checked')?.value || 'all';
+                form.querySelectorAll('.fld[data-for]').forEach(el => {
+                    const active = el.dataset.for === val;
+                    el.style.display = active ? 'flex' : 'none';
+                    el.querySelectorAll('input').forEach(i => i.disabled = !active);
+                });
+            };
+            form.querySelectorAll('input[name="period"]').forEach(r => r.addEventListener('change', () => {
+                sync();
+                if (r.value === 'all') form.submit();
+            }));
+            sync();
+        })();
+    </script>
 </body>
 </html>

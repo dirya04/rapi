@@ -9,13 +9,17 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    // Menyiapkan ringkasan dan data pengelolaan yang dibutuhkan dashboard Admin/Waka.
     public function admin(TodayAgendaService $agenda)
     {
+        // Ambil semua ruangan beserta nama PIC; dashboard Admin juga perlu menampilkan ruangan nonaktif.
         $allRooms = Room::query()
             ->leftJoin('users as room_pic', 'rooms.pic_id', '=', 'room_pic.id')
             ->orderBy('rooms.room_name')
             ->select('rooms.*', 'room_pic.fullname as pic_name')
             ->get();
+
+        // Statistik dan daftar ruangan kosong hanya dihitung dari ruangan yang aktif.
         $rooms = $allRooms->where('is_active', true)->values();
         $roomCount = $rooms->count();
         $events = $this->getEvents();
@@ -30,6 +34,7 @@ class DashboardController extends Controller
             ->orderBy('fullname')
             ->get();
 
+        // compact mengirim data di atas ke view dengan nama variabel yang sama.
         return view('admin.dashboard', compact(
             'rooms',
             'allRooms',
@@ -45,13 +50,16 @@ class DashboardController extends Controller
         ));
     }
 
+    // Menyiapkan data dashboard PIC dan membatasi daftar sesuai tanggung jawab PIC.
     public function pic(TodayAgendaService $agenda)
     {
         $picId = auth()->id();
         $user = auth()->user();
+        // PIC Sarpras mengawasi semua ruangan, sedangkan akun pic_lab mendapat cakupan semua lab.
         $isSarpras = $user && (str_contains(strtolower($user->username ?? ''), 'sarpras') || str_contains(strtolower($user->fullname ?? ''), 'sarpras'));
         $isGenericPicLab = $user && ($user->username === 'pic_lab');
 
+        // Daftar seluruh ruangan aktif dipakai untuk informasi dan pilihan booking.
         $allRooms = Room::query()
             ->leftJoin('users as room_pic', 'rooms.pic_id', '=', 'room_pic.id')
             ->where('rooms.is_active', true)
@@ -59,6 +67,7 @@ class DashboardController extends Controller
             ->select('rooms.*', 'room_pic.fullname as pic_name')
             ->get();
 
+        // Susun daftar ruangan yang menjadi cakupan kerja PIC yang sedang login.
         $assignedRoomsQuery = Room::query()
             ->leftJoin('users as room_pic', 'rooms.pic_id', '=', 'room_pic.id')
             ->where('rooms.is_active', true)
@@ -80,6 +89,7 @@ class DashboardController extends Controller
         }
         $assignedRooms = $assignedRoomsQuery->get();
 
+        // Agenda hari ini dipakai untuk menghitung ruangan yang sedang tidak terpakai.
         $rooms = $allRooms;
         $bookingRooms = $allRooms;
         $roomCount = $allRooms->count();
@@ -92,6 +102,7 @@ class DashboardController extends Controller
         $complaints = $this->getComplaints(picId: $picId);
         $allComplaints = $this->getComplaints();
 
+        // Keluhan terfilter ditampilkan untuk PIC; semua keluhan tersedia untuk kebutuhan ringkasan.
         return view('pic.dashboard', compact(
             'assignedRooms',
             'bookingRooms',
@@ -107,6 +118,7 @@ class DashboardController extends Controller
         ));
     }
 
+    // Menyiapkan informasi ruangan, agenda, dan keluhan untuk Guru/Organisasi.
     public function guru(TodayAgendaService $agenda)
     {
         $reporterId = auth()->id();
@@ -124,12 +136,14 @@ class DashboardController extends Controller
         $emptyRoomsCount = $rooms->whereNotIn('id', $todayBookedRoomIds)->count();
         $emptyRooms = $rooms->whereNotIn('id', $todayBookedRoomIds)->values();
 
+        // Pisahkan peminjaman mendatang; data agenda lain tetap tersedia sebagai riwayat/daftar umum.
         $todayStr = today()->toDateString();
         $upcomingEvents = $events->where('date', '>', $todayStr)->values();
         $recentEvents = $events;
         $complaints = $this->getComplaints(reporterId: $reporterId);
         $allComplaints = $this->getComplaints();
 
+        // Keluhan pribadi dan seluruh keluhan dikirim terpisah agar view dapat menampilkan keduanya.
         return view('guru.dashboard', compact(
             'rooms',
             'allRooms',
@@ -145,6 +159,7 @@ class DashboardController extends Controller
         ));
     }
 
+    // Mengambil agenda yang masih relevan; bila PIC diberikan, batasi ke ruangannya atau pengajuannya.
     private function getEvents(?int $picId = null)
     {
         $query = DB::table('events')
@@ -157,6 +172,7 @@ class DashboardController extends Controller
         if ($picId !== null) {
             $user = User::find($picId);
             $isGenericPicLab = $user && ($user->username === 'pic_lab');
+            // Akun PIC lab juga dapat melihat agenda di semua ruangan laboratorium.
             $query->where(function ($query) use ($picId, $isGenericPicLab) {
                 $query->where('rooms.pic_id', $picId)
                     ->orWhere('events.requester_id', $picId);
@@ -172,6 +188,7 @@ class DashboardController extends Controller
         return $query->get();
     }
 
+    // Mengambil keluhan beserta nama ruangan, PIC, dan pelapor untuk kebutuhan tampilan dashboard.
     private function getComplaints(?int $picId = null, ?int $reporterId = null)
     {
         $query = DB::table('complaints')
@@ -194,6 +211,7 @@ class DashboardController extends Controller
             $user = User::find($picId);
             $isSarpras = $user && (str_contains(strtolower($user->username ?? ''), 'sarpras') || str_contains(strtolower($user->fullname ?? ''), 'sarpras'));
             $isGenericPicLab = $user && ($user->username === 'pic_lab');
+            // Sarpras melihat semua keluhan; PIC lain dibatasi ke ruangan/keluhan yang ditanganinya.
             if (!$isSarpras) {
                 $query->where(function ($q) use ($picId, $isGenericPicLab) {
                     $q->where('rooms.pic_id', $picId)
@@ -209,7 +227,8 @@ class DashboardController extends Controller
         }
 
         if ($reporterId !== null) {
-            $query->where('complaints.reporter_id', $reporterId);
+            // Pada dashboard Guru, tampilkan keluhan yang dibuat oleh pengguna yang sedang login.
+               $query->where('complaints.reporter_id', $reporterId);
         }
 
         return $query->get();

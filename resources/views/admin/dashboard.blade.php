@@ -685,7 +685,7 @@
                         <div class="row">
                             <div class="field" style="margin-bottom: 0;">
                                 <label for="date">Tanggal pelaksanaan (mulai)</label>
-                                <input type="date" id="date" name="date" min="{{ today()->toDateString() }}" required>
+                                <input type="date" id="date" name="date" value="{{ old('date', today()->toDateString()) }}" min="{{ today()->toDateString() }}" required>
                             </div>
                             <div class="field" style="margin-bottom: 0;">
                                 <label for="end_date">Tanggal selesai <small style="color: var(--ink-muted); font-weight: normal;">(opsional jika 1 hari)</small></label>
