@@ -72,3 +72,4 @@ class ImageCompressionService
         throw new \RuntimeException('Gagal menyimpan file foto bukti ke penyimpanan publik.');
     }
 }
+

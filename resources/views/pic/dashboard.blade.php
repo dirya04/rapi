@@ -40,24 +40,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        /* ==========================================================================
+           1. VARIABEL TEMA & WARNA UTAMA (PALET WARNA RAPI-SEKOLAH)
+           Gunakan variabel di bawah untuk mengubah warna secara konsisten di seluruh dashboard.
+           ========================================================================== */
         :root {
-            --board: #123c33;        /* hijau papan tulis */
-            --board-2: #1b5246;
-            --chalk: #eaf3ee;
-            --chalk-muted: #9dbbb0;
-            --paper: #f3f6f4;        /* latar kerja */
-            --card: #ffffff;
-            --ink: #14231e;
-            --ink-muted: #5d6f68;
-            --line: #dce5e0;
-            --yellow: #f6b800;       /* kuning bus sekolah */
-            --yellow-dark: #c99500;
-            --red-soft: #fbeae7;
-            --green-soft: #e3f3ea;
-            --blue-soft: #e8f2fe;
-            --focus: #1d7a63;
-            --display: 'Bricolage Grotesque', system-ui, sans-serif;
-            --body: 'Public Sans', system-ui, sans-serif;
+            --board: #123c33;        /* Warna hijau papan tulis (sidebar & header) */
+            --board-2: #1b5246;      /* Hijau sekunder yang sedikit lebih terang */
+            --chalk: #eaf3ee;        /* Putih kehijauan untuk teks di atas background gelap */
+            --chalk-muted: #9dbbb0;  /* Warna abu-abu kehijauan lembut untuk teks sekunder */
+            --paper: #f3f6f4;        /* Latar belakang utama area kerja (abu-abu sangat terang) */
+            --card: #ffffff;         /* Warna kartu panel konten */
+            --ink: #14231e;          /* Warna teks utama (hitam kehijauan gelap) */
+            --ink-muted: #5d6f68;    /* Warna teks keterangan / subjudul */
+            --line: #dce5e0;         /* Garis batas tepi (border) */
+            --yellow: #f6b800;       /* Warna kuning bus sekolah untuk aksen dan tombol aktif */
+            --yellow-dark: #c99500;  /* Kuning gelap saat kursor diarahkan (hover) */
+            --red-soft: #fbeae7;     /* Merah muda untuk indikator ruangan terisi / error */
+            --green-soft: #e3f3ea;   /* Hijau muda untuk indikator ruangan kosong / sukses */
+            --blue-soft: #e8f2fe;    /* Biru muda lembut */
+            --focus: #1d7a63;        /* Warna fokus input */
+            --display: 'Bricolage Grotesque', system-ui, sans-serif; /* Font judul */
+            --body: 'Public Sans', system-ui, sans-serif;            /* Font teks isi */
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -69,11 +73,13 @@
             line-height: 1.55;
             min-height: 100vh;
             display: grid;
-            grid-template-columns: 270px 1fr;
+            grid-template-columns: 270px 1fr; /* 270px untuk sidebar kiri, sisanya untuk konten */
         }
         :focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
 
-        /* ---------- Sidebar ---------- */
+        /* ==========================================================================
+           2. SIDEBAR KIRI (NAVIGASI MENU UTAMA)
+           ========================================================================== */
         .sidebar {
             background: var(--board);
             color: var(--chalk);
@@ -88,19 +94,28 @@
         .brand i { font-style: normal; color: var(--yellow); }
 
         .nav { display: flex; flex-direction: column; gap: 6px; }
+        
+        /* Gaya dasar setiap link menu di sidebar */
         .nav a {
             color: var(--chalk); text-decoration: none; padding: 11px 14px; border-radius: 10px;
             font-size: .92rem; font-weight: 500; display: flex; align-items: center; gap: 10px;
             transition: background .2s;
         }
-        .nav a:hover { background: rgba(255,255,255,.1); }
+        
+        /* Efek saat kursor mouse diarahkan ke menu sidebar */
+        .nav a:hover { 
+            background: rgba(255,255,255,.1); 
+        }
+        
         .sidebar-main-nav { flex: 1; min-height: 0; overflow-y: auto; }
         .sidebar-actions { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,.16); flex-shrink: 0; }
         .nav-bottom { margin-top: 0; }
         .nav-bottom .logout { color: #ffb4a8; }
         .nav-bottom .logout:hover { background: rgba(201,64,47,.25); }
 
-        /* ---------- Main ---------- */
+        /* ==========================================================================
+           3. KONTEN UTAMA (MAIN AREA) & TOP BAR
+           ========================================================================== */
         main { padding: 40px 48px 64px; max-width: 1180px; width: 100%; }
 
         .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
@@ -321,12 +336,15 @@
             .table-responsive { -webkit-overflow-scrolling: touch; }
         }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
-        /* Multi-Page Dashboard Views */
+        /* ==========================================================================
+           4. TAMPILAN HALAMAN MULTI-PAGE (TAB / SPA SWITCHER)
+           Bagian ini mengatur pergantian halaman (Ajukan, Agenda, Ruang Kosong, dll.)
+           ========================================================================== */
         .admin-page-view {
-            display: none;
+            display: none; /* Sembunyikan semua halaman secara default */
         }
         .admin-page-view.active {
-            display: block;
+            display: block; /* Hanya tampilkan halaman yang sedang aktif */
             animation: fadeInAdminPage 0.18s ease-out;
         }
         @keyframes fadeInAdminPage {
@@ -334,13 +352,24 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* --------------------------------------------------------------------------
+           WARNA MENU YANG SEDANG DIPILIH / AKTIF DI SIDEBAR
+           * Ubah 'background' di bawah jika ingin mengganti warna kotak / pinggir menu
+             yang dipilih (misal menu "Ruang Kosong" saat diklik).
+           * Contoh:
+             - Kuning aksen: background: rgba(246, 184, 0, 0.25) !important;
+             - Hijau tua:    background: #1b5246 !important;
+             - Putih halus:  background: rgba(255, 255, 255, 0.16) !important;
+           -------------------------------------------------------------------------- */
         .sidebar .nav a.active {
-            background: rgba(255, 255, 255, 0.16) !important;
-            color: #ffffff !important;
-            font-weight: 700 !important;
+            background: rgba(255, 255, 255, 0.16) !important; /* Latar kotak menu aktif */
+            color: #ffffff !important;                         /* Warna teks menu aktif */
+            font-weight: 700 !important;                       /* Ketebalan huruf menu aktif */
         }
 
-        /* Calendar Styles inside Dashboard */
+        /* ==========================================================================
+           5. KALENDER SEKOLAH (TAMPILAN GRID TANGGAL & HARI LIBUR)
+           ========================================================================== */
         .cal-card { background: white; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
         .cal-month-stepper { display: inline-flex; align-items: center; gap: 8px; background: #f4f8f6; padding: 4px 8px; border-radius: 10px; border: 1px solid var(--line); }
         .cal-month-stepper button { width: 32px; height: 32px; display: grid; place-items: center; border: 0; background: #fff; border: 1px solid var(--line); border-radius: 7px; font-size: 1.15rem; font-weight: 800; cursor: pointer; color: var(--board); transition: background 0.15s; }
@@ -411,7 +440,10 @@
         </header>
 
         <div class="layout">
-            {{-- PAGE 1: DAFTAR AGENDA --}}
+            {{-- ====================================================================
+                 HALAMAN 1: DAFTAR AGENDA (HARI INI & RIWAYAT AGENDA RUANGAN)
+                 Bagian ini menampilkan kegiatan/acara yang sedang atau akan berlangsung.
+                 ==================================================================== --}}
             <div class="admin-page-view active" id="page-agenda" data-page="agenda">
                 <section class="panel" id="agenda-hari-ini">
                 <div class="panel-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
@@ -495,7 +527,12 @@
                 </div>
             </div>
 
-            {{-- PAGE 2: AJUKAN & LAPOR --}}
+            {{-- ====================================================================
+                 HALAMAN 2: AJUKAN & LAPOR (FORM PINJAM RUANGAN & FORM LAPOR KERUSAKAN)
+                 Berisi 2 formulir utama dengan tab switcher:
+                 1. Form Pinjam Ruangan (dengan dukungan multi-ruang hingga 3 ruang ujian)
+                 2. Form Lapor Kerusakan Fasilitas (dengan kompresi foto otomatis)
+                 ==================================================================== --}}
             <div class="admin-page-view" id="page-ajukan" data-page="ajukan">
                 <section class="panel" id="ajukan">
                 <div class="panel-head">
@@ -680,7 +717,13 @@
             </section>
             </div>
 
-            {{-- PAGE 3: RUANG KOSONG --}}
+            {{-- ====================================================================
+                 HALAMAN 3: MONITORING RUANG KOSONG (LIVE REAL-TIME AVAILABILITY)
+                 Menampilkan kartu seluruh ruangan sekolah dengan status:
+                 - "Siap Digunakan" (kosong / bebas KBM)
+                 - "Sedang Digunakan" (terisi agenda, beserta detail waktu & nama kegiatan)
+                 Dilengkapi filter sesi jam pelajaran (Sesi 1 s/d 11).
+                 ==================================================================== --}}
             <div class="admin-page-view" id="page-ruang-kosong" data-page="ruang-kosong">
                 <section class="panel" id="ruang-kosong">
                 <div class="panel-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
@@ -752,7 +795,14 @@
             </section>
             </div>
 
-            {{-- PAGE 4: PENGADUAN KERUSAKAN --}}
+            {{-- ====================================================================
+                 HALAMAN 4: STATUS PENGADUAN KERUSAKAN FASILITAS
+                 Menampilkan daftar keluhan sarana/prasarana yang dilaporkan pengguna.
+                 PIC/Sarpras dapat:
+                 - Mengubah status (Belum Diperbaiki, Menunggu Spare Part, Sudah Diperbaiki)
+                 - Melihat foto bukti kerusakan yang telah dikompres
+                 - Membuka notifikasi WhatsApp ke teknisi/pelapor
+                 ==================================================================== --}}
             <div class="admin-page-view" id="page-pengaduan" data-page="pengaduan">
                 <section class="panel" id="pengaduan">
                 <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
@@ -924,7 +974,11 @@
             </section>
             </div>
 
-            {{-- PAGE 5: DAFTAR RUANGAN --}}
+            {{-- ====================================================================
+                 HALAMAN 5: MASTER DAFTAR RUANGAN SEKOLAH
+                 Menampilkan seluruh ruangan kelas, laboratorium, dan aula sekolah
+                 beserta kapasitas, lokasi gedung, serta nama PIC penanggung jawabnya.
+                 ==================================================================== --}}
             <div class="admin-page-view" id="page-rooms" data-page="rooms">
                 <section class="panel" id="rooms">
                 <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
@@ -986,7 +1040,13 @@
             </section>
             </div>
 
-            {{-- PAGE 4: KALENDER SEKOLAH --}}
+            {{-- ====================================================================
+                 HALAMAN 6: KALENDER AGENDA & JADWAL PEMAKAIAN SEKOLAH
+                 Kalender bulanan interaktif dengan:
+                 - Indikator hari ini
+                 - Tanggal merah hari libur nasional & cuti bersama
+                 - Daftar agenda peminjaman ruangan yang disetujui pada setiap tanggal
+                 ==================================================================== --}}
             <div class="admin-page-view" id="page-kalender" data-page="kalender">
                 <section class="panel" id="kalender">
                     <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
@@ -1025,7 +1085,14 @@
     </main>
 
     <script>
-        // Tab Switcher
+        /* ==========================================================================
+           JAVASCRIPT LOGIC - DASHBOARD PIC
+           ========================================================================== */
+
+        // --------------------------------------------------------------------------
+        // 1. PENGALIH TAB FORM (Pinjam Ruangan vs Lapor Kerusakan)
+        // Mengatur tab aktif saat pengguna mengklik tombol tab di halaman Ajukan & Lapor.
+        // --------------------------------------------------------------------------
         const tabs = document.querySelectorAll('.tab');
         tabs.forEach(tab => tab.addEventListener('click', () => {
             tabs.forEach(t => {
@@ -1035,10 +1102,15 @@
             });
         }));
 
-        // Notifikasi Toast
+        // --------------------------------------------------------------------------
+        // 2. NOTIFIKASI TOAST (Pesan Sukses / Error Otomatis Menghilang dalam 6 Detik)
+        // --------------------------------------------------------------------------
         document.querySelectorAll('.toast').forEach(t => setTimeout(() => t.remove(), 6000));
 
-        // Sinkronisasi Pemilihan Sesi Peminjaman (45 Menit, 07:15 - 15:30)
+        // --------------------------------------------------------------------------
+        // 3. SINKRONISASI SESI PEMINJAMAN RUANGAN (Jam Belajar: Sesi 1 - 11, 07:15 - 15:30)
+        // Otomatis menghitung durasi, mengunci jam selesai >= jam mulai, dan mengisi input tersembunyi.
+        // --------------------------------------------------------------------------
         const sessionStart = document.getElementById('select_session_start');
         const sessionEnd = document.getElementById('select_session_end');
         const hiddenStartTime = document.getElementById('start_time');
@@ -1105,7 +1177,12 @@
             });
             updateSessionBooking();
         }
-        // Multi-Page Switcher for Sidebar Options
+
+        // --------------------------------------------------------------------------
+        // 4. SISTEM PERGANTIAN HALAMAN DASHBOARD (SPA / Multi-Page Switcher)
+        // Mengganti tampilan halaman (Agenda, Ajukan, Ruang Kosong, Pengaduan, dll.)
+        // tanpa reload halaman browser, dan memperbarui URL query (?page=...).
+        // --------------------------------------------------------------------------
         function switchDashboardPage(pageKey, updateHistory = true) {
             if (!pageKey) pageKey = 'agenda';
             if (pageKey === 'dashboard') pageKey = 'agenda';
